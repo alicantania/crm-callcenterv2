@@ -38,7 +38,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // No necesitas registrar los Resources manualmente en Filament v3
     }
 }
- 
