@@ -66,4 +66,12 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+        public function companies()
+    {
+        return $this->hasMany(Company::class, 'assigned_operator_id');
+    }
+
+    
+
+
 }

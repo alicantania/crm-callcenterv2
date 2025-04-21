@@ -19,9 +19,10 @@ class Company extends Model
         'email',
         'activity',
         'cnae',
-        'assigned_operator_id',
+        'assigned_operator_id', // <- Este es el nombre correcto según tu base de datos
     ];
 
+    // Relación con el operador asignado
     public function operator()
     {
         return $this->belongsTo(User::class, 'assigned_operator_id');

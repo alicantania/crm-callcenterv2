@@ -64,12 +64,28 @@ class CallResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')->label('Operador')->sortable()->searchable(),
-                TextColumn::make('company.name')->label('Empresa')->sortable()->searchable(),
-                TextColumn::make('call_date')->label('Fecha')->date()->sortable(),
-                TextColumn::make('call_time')->label('Hora')->sortable(),
-                TextColumn::make('duration')->label('Duración (min)')->sortable(),
+                TextColumn::make('user.name')
+                    ->label('Operador')
+                    ->searchable(), // sin sortable()
+            
+                TextColumn::make('company.name')
+                    ->label('Empresa')
+                    ->searchable(), // sin sortable()
+            
+                TextColumn::make('call_date')
+                    ->label('Fecha')
+                    ->date()
+                    ->sortable(),
+            
+                TextColumn::make('call_time')
+                    ->label('Hora')
+                    ->sortable(),
+            
+                TextColumn::make('duration')
+                    ->label('Duración (min)')
+                    ->sortable(),
             ])
+            
             ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
