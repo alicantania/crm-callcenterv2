@@ -15,15 +15,16 @@ class LlamadaManualPage extends Page
     public function mount(): void
     {
         $this->empresa = Company::query()
-            ->where(function ($query) {
-                $query->whereNull('assigned_operator_id')
+            ->when(Auth::check(), function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('assigned_operator_id')
                       ->orWhere('assigned_operator_id', Auth::id());
+                });
             })
-            //->whereNull('deleted_at') // por si más adelante se usa SoftDeletes
             ->inRandomOrder()
             ->first();
 
-        if ($this->empresa && $this->empresa->assigned_operator_id === null) {
+        if ($this->empresa && is_null($this->empresa->assigned_operator_id)) {
             $this->empresa->updateQuietly([
                 'assigned_operator_id' => Auth::id(),
             ]);
