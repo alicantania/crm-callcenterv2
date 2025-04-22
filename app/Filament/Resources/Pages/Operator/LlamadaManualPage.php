@@ -61,10 +61,17 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                     ->reactive()
                     ->required(),
 
+                Forms\Components\Textarea::make('motivo_no_interesa')
+                    ->label('Motivo del desinterés')
+                    ->visible(fn (callable $get) => $get('resultado') === 'no_interesa')
+                    ->required(fn (callable $get) => $get('resultado') === 'no_interesa'),
+
                 Forms\Components\DateTimePicker::make('fecha_rellamada')
                     ->label('¿Cuándo volver a llamar?')
-                    ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto']))
-                    ->required(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
+                    ->seconds(false)
+                    ->minutesStep(15)
+                    ->closeOnDateSelection()
+                    ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
                 
 
                 Forms\Components\Textarea::make('comentarios')
@@ -73,7 +80,8 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                 Forms\Components\TextInput::make('contacto')
                     ->label('Persona de contacto'),
             ])
-            ->statePath('formData');
+            ->statePath('formData')
+            ->columns(1);
     }
 
     public function submit(): void
