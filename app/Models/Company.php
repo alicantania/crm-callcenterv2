@@ -28,4 +28,9 @@ class Company extends Model
     {
         return $this->belongsTo(User::class, 'assigned_operator_id');
     }
+    public function calls()
+    {
+        return $this->hasMany(\App\Models\Call::class);
+    }
+
 }

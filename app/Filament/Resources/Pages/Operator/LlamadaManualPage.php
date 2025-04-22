@@ -7,17 +7,21 @@ use App\Models\Company;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Filament\Actions\Action;
 
 class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
+    protected static ?string $navigationIcon = 'heroicon-o-phone';
+    protected static ?string $navigationLabel = 'Llamada Manual';
     protected static string $view = 'filament.pages.operator.llamada-manual';
 
     public ?Company $empresa = null;
+    public array $formData = [];
 
-    // Estos son los campos del formulario
     public string $resultado = '';
     public ?string $fecha_rellamada = null;
     public ?string $comentarios = null;
@@ -37,7 +41,7 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             $this->empresa->updateQuietly(['assigned_operator_id' => Auth::id()]);
         }
 
-        $this->form->fill(); // Inicializa el formulario
+        $this->form->fill();
     }
 
     public function form(Form $form): Form
@@ -54,11 +58,14 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                         'venta' => 'Venta',
                         'error' => 'Error',
                     ])
+                    ->reactive()
                     ->required(),
 
                 Forms\Components\DateTimePicker::make('fecha_rellamada')
                     ->label('¿Cuándo volver a llamar?')
-                    ->visible(fn () => in_array($this->resultado, ['volver_a_llamar', 'contacto'])),
+                    ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto']))
+                    ->required(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
+                
 
                 Forms\Components\Textarea::make('comentarios')
                     ->label('Comentarios'),
@@ -66,36 +73,30 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                 Forms\Components\TextInput::make('contacto')
                     ->label('Persona de contacto'),
             ])
-            ->statePath('.'); // Importante para usar propiedades públicas
+            ->statePath('formData');
     }
 
     public function submit(): void
     {
         if (! $this->empresa) {
-            Notification::make()
-                ->title('No hay empresa asignada')
-                ->danger()
-                ->send();
-
+            Notification::make()->title('❌ No hay empresa asignada')->danger()->send();
             return;
         }
 
-        // Guardar la llamada en la base de datos
+        $data = $this->formData;
+
         Call::create([
             'user_id' => Auth::id(),
             'company_id' => $this->empresa->id,
             'call_date' => now(),
-            'duration' => rand(30, 300),
-            'status' => $this->form->getState()['resultado'],
-            'recall_at' => in_array($this->form->getState()['resultado'], ['volver_a_llamar', 'contacto']) 
-                ? $this->form->getState()['fecha_rellamada']
-                : null,
-            'notes' => $this->form->getState()['comentarios'],
-            'contact_person' => $this->form->getState()['contacto'],
+            'duration' => rand(60, 300),
+            'status' => $data['resultado'],
+            'recall_at' => in_array($data['resultado'], ['volver_a_llamar', 'contacto']) ? $data['fecha_rellamada'] : null,
+            'notes' => $data['comentarios'] ?? null,
+            'contact_person' => $data['contacto'] ?? null,
         ]);
 
-        // Gestionar el flujo según el resultado
-        match ($this->form->getState()['resultado']) {
+        match ($data['resultado']) {
             'no_interesa', 'no_contesta' => $this->empresa->updateQuietly(['assigned_operator_id' => null]),
             'error' => $this->empresa->updateQuietly(['deleted_at' => now()]),
             'venta' => redirect('/dashboard/sales/create?empresa_id=' . $this->empresa->id),
@@ -103,7 +104,7 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
         };
 
         Notification::make()
-            ->title('✅ Resultado registrado correctamente')
+            ->title('✅ Llamada registrada correctamente')
             ->success()
             ->send();
 
@@ -113,6 +114,32 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 
     public function getHeading(): string
     {
-        return 'Llamada Manual';
+        return '📞 Llamada Manual';
     }
+
+    public function getTitle(): string
+    {
+        return $this->empresa ? '📞 Llamada a: ' . $this->empresa->name : '📞 Llamada Manual';
+    }
+
+    public function getContent(): string
+    {
+        if (! $this->empresa) {
+            return '<div class="text-red-600 text-lg font-bold">🚫 No hay empresas disponibles para llamar ahora mismo.</div>';
+        }
+
+        return view('filament.pages.operator._empresa-info', ['empresa' => $this->empresa])->render();
+    }
+
+    // public function getFormActions(): array
+    // {
+    //     return [
+    //         Action::make('guardar')
+    //             ->label('✅ Guardar resultado de la llamada')
+    //             ->submit('submit')
+    //             ->color('success')
+    //             ->button()
+    //             ->keyBindings(['mod+s']),
+    //     ];
+    // }
 }
