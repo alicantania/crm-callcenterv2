@@ -33,4 +33,9 @@ class Company extends Model
         return $this->hasMany(\App\Models\Call::class);
     }
 
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
 }

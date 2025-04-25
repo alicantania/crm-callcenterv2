@@ -21,6 +21,16 @@ class Sale extends Model
         'commission',
         'liquidator_id',
         'liquidated_at',
+        // Nuevos campos para representar legal y alumno
+        'legal_representative_name',
+        'legal_representative_dni',
+        'legal_representative_ss',
+        'student_name',
+        'student_dni',
+        'student_ss',
+        'student_email',
+        'student_phone',
+        'notes',
     ];
 
     // Relación con la empresa

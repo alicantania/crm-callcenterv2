@@ -10,17 +10,15 @@ class Call extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', // operador que hizo la llamada
+        'user_id',               // Operador que hizo la llamada
         'company_id',
-        'status', // interesado, no contesta, volver a llamar, etc.
+        'status',                // Resultado: interesado, no contesta, etc.
         'duration',
         'call_date',
-        'call_time',
         'notes',
-        'contact_name',
-        'contact_role',
-        'reschedule_date',
-        'reschedule_time',
+        'contact_person',        // Persona que atendió la llamada
+        'motivo_desinteres',     // Motivo si no le interesa
+        'recall_at',             // Fecha para volver a llamar
     ];
 
     public function company()

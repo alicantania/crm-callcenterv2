@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
+    use HasRoles; 
 
     protected $fillable = [
         'name',
@@ -55,7 +58,6 @@ class User extends Authenticatable
             ->implode('');
     }
 
-
     public function businessLines()
     {
         return $this->belongsToMany(BusinessLine::class);
@@ -66,12 +68,8 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
-        public function companies()
+    public function companies()
     {
         return $this->hasMany(Company::class, 'assigned_operator_id');
     }
-
-    
-
-
 }

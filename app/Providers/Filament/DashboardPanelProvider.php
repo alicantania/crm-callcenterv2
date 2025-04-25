@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\Company;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
@@ -57,6 +58,9 @@ class DashboardPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->plugins([
+                FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([
                 Authenticate::class,
