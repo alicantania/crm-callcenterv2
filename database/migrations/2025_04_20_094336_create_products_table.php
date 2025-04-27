@@ -11,9 +11,11 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('price', 8, 2);
+            $table->decimal('price', 8, 2); // Precio que paga el cliente
+            $table->enum('commission_type', ['fijo', 'porcentaje'])->default('porcentaje'); // Tipo de comisión para el operador
+            $table->decimal('commission_value', 8, 2)->default(0); // Valor fijo o porcentaje de comisión
             $table->boolean('available')->default(true);
-            $table->foreignId('business_line_id')->constrained()->onDelete('cascade');
+            $table->foreignId('business_line_id')->constrained()->onDelete('cascade'); // Bonificada o implantación privada
             $table->timestamps();
         });
     }

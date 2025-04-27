@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Get; // ⚡️ MUY IMPORTANTE para que reactive los valores automáticos
 
 class SaleResource extends Resource
 {
@@ -46,49 +47,52 @@ class SaleResource extends Resource
                         TextInput::make('gestoria_email')->label('Email de la gestoría')->default(fn () => request()->get('gestoria_email'))->email(),
                         TextInput::make('gestoria_phone')->label('Teléfono de la gestoría')->default(fn () => request()->get('gestoria_phone')),
                     ])
-                 ->columns(3),
-
-
+                    ->columns(3),
 
                 Section::make('🧑 Representante Legal')
                     ->schema([
-                        TextInput::make('legal_representative_name')
-                            ->label('Nombre del representante legal'),
-
-                        TextInput::make('legal_representative_dni')
-                            ->label('DNI del representante'),
-
+                        TextInput::make('legal_representative_name')->label('Nombre del representante legal'),
+                        TextInput::make('legal_representative_dni')->label('DNI del representante'),
                         TextInput::make('representative_phone')->label('Teléfono del representante')->default(fn () => request()->get('representative_phone')),
                     ])
                     ->columns(3),
 
                 Section::make('🎓 Alumno')
                     ->schema([
-                        TextInput::make('student_name')
-                            ->label('Nombre del alumno'),
-
-                        TextInput::make('student_dni')
-                            ->label('DNI del alumno'),
-
-                        TextInput::make('student_social_security')
-                            ->label('Seguridad social del alumno'),
-
-                        TextInput::make('student_phone')
-                            ->label('Teléfono del alumno'),
-
-                        TextInput::make('student_email')
-                            ->label('Email del alumno')
-                            ->email(),
+                        TextInput::make('student_name')->label('Nombre del alumno'),
+                        TextInput::make('student_dni')->label('DNI del alumno'),
+                        TextInput::make('student_social_security')->label('Seguridad social del alumno'),
+                        TextInput::make('student_phone')->label('Teléfono del alumno'),
+                        TextInput::make('student_email')->label('Email del alumno')->email(),
                     ])
                     ->columns(3),
 
-                    Section::make('📄 Detalles de la Venta')
+                Section::make('📄 Detalles de la Venta')
                     ->schema([
                         Select::make('product_id')
                             ->label('Producto vendido')
                             ->relationship('product', 'name')
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->reactive(), // << para recargar dinámicamente
+
+                        TextInput::make('sale_price')
+                            ->label('Precio de venta (€)')
+                            ->numeric()
+                            ->default(fn (Get $get) => optional(\App\Models\Product::find($get('product_id')))->price ?? 0)
+                            ->required()
+                            ->disabled(), // no editable directamente
+
+                        TextInput::make('commission_amount')
+                            ->label('Comisión (€)')
+                            ->numeric()
+                            ->default(fn (Get $get) => 
+                                ($product = \App\Models\Product::find($get('product_id')))
+                                    ? round($product->price * ($product->commission_percentage / 100), 2)
+                                    : 0
+                            )
+                            ->required()
+                            ->disabled(), // no editable directamente
 
                         DatePicker::make('sale_date')
                             ->label('Fecha de venta')
