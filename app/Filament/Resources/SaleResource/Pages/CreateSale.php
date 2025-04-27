@@ -5,71 +5,100 @@ namespace App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Illuminate\Support\Facades\Auth;
 
 class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
 
-    public function form(Form $form): Form
+    public $empresaId = null;
+
+    public function mount(): void
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('📦 Datos generales')
-                    ->schema([
-                        Forms\Components\Select::make('company_id')
-                            ->relationship('company', 'name')
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('product_id')
-                            ->relationship('product', 'name')
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('business_line_id')
-                            ->relationship('businessLine', 'name')
-                            ->required(),
-                        Forms\Components\DatePicker::make('sale_date')
-                            ->label('Fecha de venta')
-                            ->required()
-                            ->default(now()),
-                        Forms\Components\Hidden::make('operator_id')
-                            ->default(Auth::id()),
-                    ])->columns(2),
+        parent::mount();
 
-                Forms\Components\Section::make('🧑 Representante legal')
-                    ->schema([
-                        Forms\Components\TextInput::make('legal_representative_name')->required(),
-                        Forms\Components\TextInput::make('legal_representative_dni')->required(),
-                        Forms\Components\TextInput::make('legal_representative_social_security')->required(),
-                    ])->columns(3),
+        // Capturar el ID de empresa que viene por GET
+        $this->empresaId = request()->get('empresa_id');
+    }
 
-                Forms\Components\Section::make('🎓 Alumno')
-                    ->schema([
-                        Forms\Components\TextInput::make('student_name')->required(),
-                        Forms\Components\TextInput::make('student_dni')->required(),
-                        Forms\Components\TextInput::make('student_social_security')->required(),
-                        Forms\Components\TextInput::make('student_phone'),
-                        Forms\Components\TextInput::make('student_email'),
-                    ])->columns(3),
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['operator_id'] = Auth::id();
+        $data['company_id'] = $this->empresaId;
 
-                Forms\Components\Section::make('🗂️ Datos administrativos')
-                    ->schema([
-                        Forms\Components\Select::make('tramitator_id')
-                            ->label('Tramitador')
-                            ->relationship('tramitator', 'name')
-                            ->searchable(),
-                        Forms\Components\DatePicker::make('tramitated_at')
-                            ->label('Fecha de tramitación'),
-                        Forms\Components\TextInput::make('contract_number'),
-                        Forms\Components\TextInput::make('commission'),
-                        Forms\Components\Select::make('liquidator_id')
-                            ->label('Liquidador')
-                            ->relationship('liquidator', 'name')
-                            ->searchable(),
-                        Forms\Components\DatePicker::make('liquidated_at')
-                            ->label('Fecha de liquidación'),
-                    ])->columns(3),
-            ]);
+        return $data;
+    }
+
+    protected function getFormSchema(): array
+    {
+        return [
+            Forms\Components\Section::make('📦 Datos de la Empresa')
+                ->schema([
+                    Forms\Components\TextInput::make('company_name')
+                        ->label('Nombre de la empresa')
+                        ->required()
+                        ->maxLength(255),
+
+                    Forms\Components\TextInput::make('company_cif')
+                        ->label('CIF')
+                        ->required()
+                        ->maxLength(50),
+
+                    Forms\Components\TextInput::make('company_address')
+                        ->label('Dirección')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_city')
+                        ->label('Ciudad')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_province')
+                        ->label('Provincia')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_postal_code')
+                        ->label('Código postal')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_phone')
+                        ->label('Teléfono')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_email')
+                        ->label('Email')
+                        ->email()
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_activity')
+                        ->label('Actividad')
+                        ->required(),
+
+                    Forms\Components\TextInput::make('company_cnae')
+                        ->label('CNAE')
+                        ->required(),
+                ])
+                ->columns(2),
+
+            Forms\Components\Section::make('🛒 Datos de la Venta')
+                ->schema([
+                    Forms\Components\Select::make('product_id')
+                        ->label('Producto vendido')
+                        ->relationship('product', 'name')
+                        ->required()
+                        ->searchable(),
+
+                    Forms\Components\Select::make('business_line_id')
+                        ->label('Línea de negocio')
+                        ->relationship('businessLine', 'name')
+                        ->required()
+                        ->searchable(),
+
+                    Forms\Components\DatePicker::make('sale_date')
+                        ->label('Fecha de venta')
+                        ->default(now())
+                        ->required(),
+                ])
+                ->columns(2),
+        ];
     }
 }

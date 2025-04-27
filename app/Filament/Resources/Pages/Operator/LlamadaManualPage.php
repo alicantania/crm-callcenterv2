@@ -10,6 +10,7 @@ use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Filament\Actions\Action;
+use Livewire\Attributes\On; // <<< AÑADIDO ESTO
 
 class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 {
@@ -49,11 +50,12 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Section::make("📞 Datos de la llamada")
+                Forms\Components\Section::make("📞 Resultado de la llamada")
+                    ->description("Completa la información con cuidado para registrar correctamente el resultado de la llamada.")
                     ->schema([
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\Select::make('resultado')
-                                ->label('Resultado de la llamada')
+                                ->label('Resultado')
                                 ->options([
                                     'no_interesa' => 'No interesa',
                                     'no_contesta' => 'No contesta',
@@ -62,39 +64,40 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                                     'error' => 'Error',
                                 ])
                                 ->reactive()
-                                ->required(),
+                                ->required()
+                                ->columnSpanFull(),
 
-                                Forms\Components\TextInput::make('motivo_desinteres')
+                            Forms\Components\TextInput::make('motivo_desinteres')
                                 ->label('Motivo del desinterés')
                                 ->placeholder('Ej: No tiene créditos, No quiere hacer cursos...')
                                 ->visible(fn (callable $get) => $get('resultado') === 'no_interesa')
                                 ->required(fn (callable $get) => $get('resultado') === 'no_interesa')
-                                ->dehydrated(fn (callable $get) => $get('resultado') === 'no_interesa'),
+                                ->columnSpanFull(),
                         ]),
 
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\DateTimePicker::make('fecha_rellamada')
-                                ->label('¿Cuándo volver a llamar?')
+                                ->label('📅 ¿Cuándo volver a llamar?')
                                 ->minutesStep(5)
                                 ->withoutSeconds()
                                 ->displayFormat('d/m/Y H:i')
                                 ->native(false)
                                 ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
 
-                                Forms\Components\TextInput::make('contacto')
-                                ->label('Persona de contacto')
-                                ->placeholder('Nombre de quien atiende...')
-                                ->dehydrated(fn (callable $get) => filled($get('contacto'))),
+                            Forms\Components\TextInput::make('contacto')
+                                ->label('👤 Persona de contacto')
+                                ->placeholder('Nombre de quien atiende...'),
                         ]),
 
                         Forms\Components\Textarea::make('comentarios')
-                            ->label('Comentarios adicionales')
+                            ->label('📝 Comentarios adicionales')
                             ->autosize()
-                            ->rows(3)
+                            ->rows(4)
                             ->placeholder('Observaciones sobre la llamada...')
                             ->columnSpanFull(),
                     ])
-                    ->columns(1),
+                    ->columns(1)
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text'),
             ])
             ->statePath('formData')
             ->model(Call::class);
@@ -107,15 +110,7 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             return;
         }
 
-
-        //dd($this->formData);
-
         $data = $this->formData;
-
-        if ($data['resultado'] === 'no_contesta') {
-            $this->reagendarEmpresaParaOtroOperador($data);
-            return;
-        }
 
         Call::create([
             'user_id' => Auth::id(),
@@ -133,7 +128,6 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             'no_interesa' => $this->empresa->updateQuietly(['assigned_operator_id' => null]),
             'no_contesta' => $this->reagendarEmpresaParaOtroOperador(),
             'error' => $this->empresa->updateQuietly(['deleted_at' => now()]),
-            'venta' => redirect('/dashboard/sales/create?empresa_id=' . $this->empresa->id),
             default => null,
         };
 
@@ -145,7 +139,7 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
         $this->redirect('/dashboard/llamada-manual-page');
     }
 
-    private function reagendarEmpresaParaOtroOperador(array $data): void
+    private function reagendarEmpresaParaOtroOperador(): void
     {
         $otroOperador = \App\Models\User::query()
             ->where('id', '!=', Auth::id())
@@ -216,17 +210,42 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                 ->label('💰 Marcar como venta')
                 ->color('warning')
                 ->requiresConfirmation()
-                ->action(function () {
-                    if (! $this->empresa) {
-                        Notification::make()->title('❌ No hay empresa asignada')->danger()->send();
-                        return;
-                    }
-
-                    $this->redirect(\App\Filament\Resources\SaleResource::getUrl('create', [
-                        'empresa_id' => $this->empresa->id,
-                    ]));
-                }),
+                ->modalHeading('¿Confirmar venta?')
+                ->modalDescription('¿Estás seguro de que deseas crear una venta para esta empresa?')
+                ->modalSubmitActionLabel('Sí, crear venta')
+                ->modalCancelActionLabel('Cancelar') // <<< AÑADIDO Cancelar
+                ->action(fn () => $this->redirigirAVenta()),
         ];
+    }
+
+    #[On('redirigir-venta')] // <<< ESCUCHANDO evento para el modal manual
+    public function redirigirAVenta(): void
+    {
+        if (! $this->empresa) {
+            Notification::make()->title('❌ No hay empresa asignada')->danger()->send();
+            return;
+        }
+
+        $this->redirect(\App\Filament\Resources\SaleResource::getUrl('create', [
+            'empresa_id' => $this->empresa->id,
+            'empresa_name' => $this->empresa->name,
+            'empresa_address' => $this->empresa->address,
+            'empresa_city' => $this->empresa->city,
+            'empresa_province' => $this->empresa->province,
+            'empresa_phone' => $this->empresa->phone,
+            'empresa_mobile' => $this->empresa->mobile,
+            'empresa_email' => $this->empresa->email,
+            'empresa_activity' => $this->empresa->activity,
+            'empresa_cnae' => $this->empresa->cnae,
+            'empresa_cif' => $this->empresa->cif,
+            'empresa_contact_person' => $this->empresa->contact_person,
+            'empresa_iban' => $this->empresa->iban,
+            'empresa_social_security' => $this->empresa->social_security,
+            'gestoria_name' => $this->empresa->gestoria_name,
+            'gestoria_email' => $this->empresa->gestoria_email,
+            'gestoria_phone' => $this->empresa->gestoria_phone,
+            'representative_phone' => $this->empresa->representative_phone,
+        ]));
     }
 
 }
