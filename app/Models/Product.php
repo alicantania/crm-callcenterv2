@@ -15,7 +15,9 @@ class Product extends Model
         'price',
         'available',
         'business_line_id',
+        'commission_percentage', // ← esto es lo nuevo
     ];
+    
 
     public function businessLine()
     {

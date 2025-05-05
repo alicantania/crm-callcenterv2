@@ -4,105 +4,113 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SaleResource\Pages;
 use App\Models\Sale;
-use Filament\Forms\Form;
+use Filament\Forms;
+use Filament\Forms\Form as FilamentForm;
 use Filament\Resources\Resource;
+use Filament\Tables;  
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Get; // ⚡️ MUY IMPORTANTE para que reactive los valores automáticos
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use App\Models\Product;
+
+
 
 class SaleResource extends Resource
 {
     protected static ?string $model = Sale::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Ventas';
 
-    public static function form(Form $form): Form
+    public static function form(FilamentForm $form): FilamentForm
     {
         return $form
             ->schema([
                 Section::make('📦 Datos de la Empresa')
                     ->schema([
-                        TextInput::make('company_cif')->label('CIF')->default(fn () => request()->get('empresa_cif'))->required(),
-                        TextInput::make('company_name')->label('Nombre de la empresa')->default(fn () => request()->get('empresa_name'))->required(),
-                        TextInput::make('company_address')->label('Dirección')->default(fn () => request()->get('empresa_address'))->required(),
-                        TextInput::make('company_city')->label('Localidad')->default(fn () => request()->get('empresa_city'))->required(),
-                        TextInput::make('company_province')->label('Provincia')->default(fn () => request()->get('empresa_province'))->required(),
-                        TextInput::make('company_phone')->label('Teléfono')->default(fn () => request()->get('empresa_phone')),
-                        TextInput::make('company_mobile')->label('Móvil')->default(fn () => request()->get('empresa_mobile')),
-                        TextInput::make('company_email')->label('Email')->default(fn () => request()->get('empresa_email'))->email(),
-                        TextInput::make('company_activity')->label('Actividad')->default(fn () => request()->get('empresa_activity')),
-                        TextInput::make('company_cnae')->label('CNAE')->default(fn () => request()->get('empresa_cnae')),
-                        TextInput::make('contact_person')->label('Persona de contacto')->default(fn () => request()->get('empresa_contact_person')),
-                        TextInput::make('iban')->label('IBAN')->default(fn () => request()->get('empresa_iban')),
-                        TextInput::make('social_security')->label('Seguridad Social de la empresa')->default(fn () => request()->get('empresa_social_security')),
+                        TextInput::make('company_name')->label('Empresa')->required(),
+                        TextInput::make('company_cif')->label('CIF')->required(),
+                        TextInput::make('company_address')->label('Dirección')->required(),
+                        TextInput::make('company_city')->label('Ciudad')->required(),
+                        TextInput::make('company_province')->label('Provincia')->required(),
+                        TextInput::make('company_phone')->label('Teléfono'),
+                        TextInput::make('company_mobile')->label('Móvil'),
+                        TextInput::make('company_email')->label('Email')->email(),
+                        TextInput::make('company_activity')->label('Actividad'),
+                        TextInput::make('company_cnae')->label('CNAE'),
+                        TextInput::make('contact_person')->label('Persona contacto'),
+                        TextInput::make('social_security')->label('SS empresa'),
+                        TextInput::make('iban')->label('IBAN'),
                     ])
                     ->columns(3),
 
                 Section::make('🧑 Gestoría')
                     ->schema([
-                        TextInput::make('gestoria_name')->label('Nombre de la gestoría')->default(fn () => request()->get('gestoria_name')),
-                        TextInput::make('gestoria_email')->label('Email de la gestoría')->default(fn () => request()->get('gestoria_email'))->email(),
-                        TextInput::make('gestoria_phone')->label('Teléfono de la gestoría')->default(fn () => request()->get('gestoria_phone')),
+                        TextInput::make('gestoria_name')->label('Gestoría'),
+                        TextInput::make('gestoria_cif')->label('CIF gestoría'),
+                        TextInput::make('gestoria_phone')->label('Tel gestoría'),
+                        TextInput::make('gestoria_email')->label('Email gestoría')->email(),
                     ])
                     ->columns(3),
 
-                Section::make('🧑 Representante Legal')
+                Section::make('👤 Representante Legal')
                     ->schema([
-                        TextInput::make('legal_representative_name')->label('Nombre del representante legal'),
-                        TextInput::make('legal_representative_dni')->label('DNI del representante'),
-                        TextInput::make('representative_phone')->label('Teléfono del representante')->default(fn () => request()->get('representative_phone')),
+                        TextInput::make('legal_representative_name')->label('Nombre rep. legal'),
+                        TextInput::make('legal_representative_dni')->label('DNI rep.'),
+                        TextInput::make('representative_phone')->label('Tel rep.'),
                     ])
                     ->columns(3),
 
                 Section::make('🎓 Alumno')
                     ->schema([
-                        TextInput::make('student_name')->label('Nombre del alumno'),
-                        TextInput::make('student_dni')->label('DNI del alumno'),
-                        TextInput::make('student_social_security')->label('Seguridad social del alumno'),
-                        TextInput::make('student_phone')->label('Teléfono del alumno'),
-                        TextInput::make('student_email')->label('Email del alumno')->email(),
+                        TextInput::make('student_name')->label('Nombre alumno'),
+                        TextInput::make('student_dni')->label('DNI alumno'),
+                        TextInput::make('student_social_security')->label('SS alumno'),
+                        TextInput::make('student_phone')->label('Tel alumno'),
+                        TextInput::make('student_email')->label('Email alumno')->email(),
                     ])
                     ->columns(3),
 
-                Section::make('📄 Detalles de la Venta')
+                    Section::make('Detalles de la Venta')
                     ->schema([
                         Select::make('product_id')
-                            ->label('Producto vendido')
+                            ->label('Curso')
                             ->relationship('product', 'name')
                             ->searchable()
                             ->required()
-                            ->reactive(), // << para recargar dinámicamente
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set) {
+                                $product = Product::find($state);
+                                $set('price', $product?->price ?? 0);
+                                $set('commission_amount', $product
+                                    ? round($product->price * ($product->commission_percentage / 100), 2)
+                                    : 0
+                                );
+                            }),
 
-                        TextInput::make('sale_price')
-                            ->label('Precio de venta (€)')
+                        TextInput::make('price')
+                            ->label('Precio (€)')
                             ->numeric()
-                            ->default(fn (Get $get) => optional(\App\Models\Product::find($get('product_id')))->price ?? 0)
                             ->required()
-                            ->disabled(), // no editable directamente
+                            ->disabled(),
 
                         TextInput::make('commission_amount')
                             ->label('Comisión (€)')
                             ->numeric()
-                            ->default(fn (Get $get) => 
-                                ($product = \App\Models\Product::find($get('product_id')))
-                                    ? round($product->price * ($product->commission_percentage / 100), 2)
-                                    : 0
-                            )
                             ->required()
-                            ->disabled(), // no editable directamente
+                            ->disabled(),
 
                         DatePicker::make('sale_date')
-                            ->label('Fecha de venta')
+                            ->label('Fecha venta')
                             ->default(now())
                             ->required(),
 
                         Select::make('operator_id')
                             ->label('Operador que hizo la venta')
                             ->relationship('operator', 'name')
-                            ->default(auth()->id())
+                            ->default(fn () => auth()->id())
                             ->required(),
                     ])
                     ->columns(2),
@@ -112,15 +120,20 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([])
+            ->columns([
+                Tables\Columns\TextColumn::make('company_name')->label('Empresa'),
+                Tables\Columns\TextColumn::make('product.name')->label('Curso'),
+                Tables\Columns\TextColumn::make('sale_price')->label('Precio'),
+                Tables\Columns\TextColumn::make('commission_amount')->label('Comisión'),
+                Tables\Columns\TextColumn::make('sale_date')->date()->label('Fecha'),
+                Tables\Columns\TextColumn::make('status')->label('Estado'),
+            ])
             ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
