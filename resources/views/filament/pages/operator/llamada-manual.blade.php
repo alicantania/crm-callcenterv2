@@ -9,7 +9,7 @@
 
             <!-- Info de empresa -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded shadow">
-                <div><strong>📍 Dirección:</strong> {{ $empresa->address }}</div>
+                <div><strong>📍 Dirección hola!!!:</strong> {{ $empresa->address }}</div>
                 <div><strong>🏙️ Ciudad:</strong> {{ $empresa->city }}</div>
                 <div><strong>🌍 Provincia:</strong> {{ $empresa->province }}</div>
                 <div><strong>📞 Teléfono:</strong> {{ $empresa->phone }}</div>
