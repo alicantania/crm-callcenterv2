@@ -31,27 +31,26 @@ class SaleResource extends Resource
                 Section::make('📦 Datos de la Empresa')
                     ->schema([
                         TextInput::make('company_name')->label('Empresa')->required(),
-                        TextInput::make('company_cif')->label('CIF')->required(),
-                        TextInput::make('company_address')->label('Dirección')->required(),
-                        TextInput::make('company_city')->label('Ciudad')->required(),
-                        TextInput::make('company_province')->label('Provincia')->required(),
-                        TextInput::make('company_phone')->label('Teléfono'),
-                        TextInput::make('company_mobile')->label('Móvil'),
-                        TextInput::make('company_email')->label('Email')->email(),
-                        TextInput::make('company_activity')->label('Actividad'),
-                        TextInput::make('company_cnae')->label('CNAE'),
+                        TextInput::make('cif')->label('CIF')->required(),
+                        TextInput::make('address')->label('Dirección')->required(),
+                        TextInput::make('city')->label('Ciudad')->required(),
+                        TextInput::make('province')->label('Provincia')->required(),
+                        TextInput::make('phone')->label('Teléfono'),
+                        TextInput::make('email')->label('Email')->email(),
+                        TextInput::make('activity')->label('Actividad'),
+                        TextInput::make('cnae')->label('CNAE'),
                         TextInput::make('contact_person')->label('Persona contacto'),
-                        TextInput::make('social_security')->label('SS empresa'),
-                        TextInput::make('iban')->label('IBAN'),
+                        TextInput::make('company_iban')->label('IBAN'),
+                        TextInput::make('ss_company')->label('SS Empresa'),
                     ])
                     ->columns(3),
 
                 Section::make('🧑 Gestoría')
                     ->schema([
                         TextInput::make('gestoria_name')->label('Gestoría'),
-                        TextInput::make('gestoria_cif')->label('CIF gestoría'),
-                        TextInput::make('gestoria_phone')->label('Tel gestoría'),
-                        TextInput::make('gestoria_email')->label('Email gestoría')->email(),
+                        TextInput::make('gestoria_cif')->label('CIF Gestoría'),
+                        TextInput::make('gestoria_phone')->label('Tel Gestoría'),
+                        TextInput::make('gestoria_email')->label('Email Gestoría')->email(),
                     ])
                     ->columns(3),
 
@@ -59,7 +58,7 @@ class SaleResource extends Resource
                     ->schema([
                         TextInput::make('legal_representative_name')->label('Nombre rep. legal'),
                         TextInput::make('legal_representative_dni')->label('DNI rep.'),
-                        TextInput::make('representative_phone')->label('Tel rep.'),
+                        TextInput::make('legal_representative_phone')->label('Tel rep.'),
                     ])
                     ->columns(3),
 
@@ -67,7 +66,7 @@ class SaleResource extends Resource
                     ->schema([
                         TextInput::make('student_name')->label('Nombre alumno'),
                         TextInput::make('student_dni')->label('DNI alumno'),
-                        TextInput::make('student_social_security')->label('SS alumno'),
+                        TextInput::make('student_ss')->label('SS alumno'),
                         TextInput::make('student_phone')->label('Tel alumno'),
                         TextInput::make('student_email')->label('Email alumno')->email(),
                     ])
@@ -95,6 +94,13 @@ class SaleResource extends Resource
                             ->numeric()
                             ->required()
                             ->disabled(),
+
+                        Select::make('business_line_id')
+                            ->label('Línea de negocio')
+                            ->relationship('businessLine', 'name')
+                            ->required()
+                            ->disabled() // 👈 evita que el usuario lo modifique manualmente
+                            ->reactive(),
 
                         TextInput::make('commission_amount')
                             ->label('Comisión (€)')

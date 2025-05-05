@@ -10,8 +10,7 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
-        // Datos de empresa
-        'company_id',                // FK a companies
+        // Datos de la empresa (coinciden con columnas de BBDD)
         'company_name',
         'cif',
         'address',
@@ -21,43 +20,55 @@ class Sale extends Model
         'email',
         'activity',
         'cnae',
-        'contact_person',
-        'iban',                      // company_iban en tu tabla
-        'social_security',           // ss_company en tu tabla
 
-        // Datos de gestoría
-        'gestoria_cif',
-        'gestoria_phone',
-        'gestoria_email',
-
-        // Datos contacto legal/alumno
-        'legal_representative_name',
-        'legal_representative_dni',
-        'legal_representative_phone',// nombre real en tu tabla
-        'legal_representative_ss',   // si lo tienes en la tabla
-        'student_name',
-        'student_dni',
-        'student_phone',
-        'student_email',
-        'student_social_security',   // ss_student en la tabla
-
-        // Detalles de la venta
+        // Información de contacto (si existen en BBDD):
+        'company_iban',
+        'ss_company',
+        'ss_student',
+        
+        // Línea de negocio y producto
         'product_id',
         'business_line_id',
-        'operator_id',
-        'sale_date',
-        'processing_date',           // tramitated_at o processing_date
-        'tramitator_id',
-        'contract_number',
+
+        // Datos de la venta
+        'price',
         'commission_amount',
+        'sale_date',
+        'operator_id',
+
+        // Flujo de tramitación
+        'tramitator_id',
+        'processing_date',
+        'contract_number',
         'commission_paid_date',
         'liquidated_by',
         'liquidation_date',
         'status',
-        'notes',
 
-        // Locking / tracking
+        // Representante legal
+        'legal_representative_name',
+        'legal_representative_dni',
+        'legal_representative_phone',
+
+        // Gestoría
+        'gestoria_cif',
+        'gestoria_phone',
+        'gestoria_email',
+
+        // Alumno
+        'student_name',
+        'student_dni',
+        'student_ss',
+        'student_phone',
+        'student_email',
+
+        // Relaciones
+        'company_id',
         'locked_by_user_id',
+
+        // Campos auxiliares
+        'iva_percentage',
+        'additional_info',
     ];
 
     // Relaciones
