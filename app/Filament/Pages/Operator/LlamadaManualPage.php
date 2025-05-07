@@ -218,13 +218,16 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
         ];
     }
 
-    #[On('redirigir-venta')] // <<< ESCUCHANDO evento para el modal manual
+    #[On('redirigir-venta')]
     public function redirigirAVenta(): void
     {
         if (! $this->empresa) {
             Notification::make()->title('❌ No hay empresa asignada')->danger()->send();
             return;
         }
+
+        // Asegúrate de tener un producto asociado (puedes ajustar esta lógica según tu caso)
+        $producto = \App\Models\Product::first(); // Usa el que quieras, o asócialo a la empresa si hay relación
 
         $this->redirect(\App\Filament\Resources\SaleResource::getUrl('create', [
             'empresa_id' => $this->empresa->id,
@@ -240,12 +243,19 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             'empresa_cif' => $this->empresa->cif,
             'empresa_contact_person' => $this->empresa->contact_person,
             'empresa_iban' => $this->empresa->iban,
-            'empresa_social_security' => $this->empresa->social_security,
+            'empresa_social_security' => $this->empresa->ss_company,
             'gestoria_name' => $this->empresa->gestoria_name,
             'gestoria_email' => $this->empresa->gestoria_email,
             'gestoria_phone' => $this->empresa->gestoria_phone,
             'representative_phone' => $this->empresa->representative_phone,
+
+            // campos clave
+            'operator_id' => auth()->id(),
+            'sale_date' => now()->toDateString(),
+            'product_id' => $producto?->id,
+            'business_line_id' => $producto?->business_line_id,
         ]));
     }
+
 
 }

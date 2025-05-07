@@ -20,36 +20,53 @@ class CreateSale extends CreateRecord
     {
         parent::mount();
 
+        $defaults = [
+            'operator_id' => Auth::id(),
+            'sale_date' => now()->toDateString(),
+        ];
+
         if ($empresaId = request()->get('empresa_id')) {
             $this->empresa = Company::find($empresaId);
             if ($this->empresa) {
-                $this->form->fill([
+                $empresaData = [
                     'company_id' => $this->empresa->id,
                     'company_name' => $this->empresa->name,
-                    'company_cif' => $this->empresa->cif,
-                    'company_address' => $this->empresa->address,
-                    'company_city' => $this->empresa->city,
-                    'company_province' => $this->empresa->province,
-                    'company_postal_code' => $this->empresa->postal_code,
-                    'company_phone' => $this->empresa->phone,
-                    'company_email' => $this->empresa->email,
-                    'company_activity' => $this->empresa->activity,
-                    'company_cnae' => $this->empresa->cnae,
+                    'cif' => $this->empresa->cif,
+                    'address' => $this->empresa->address,
+                    'city' => $this->empresa->city,
+                    'province' => $this->empresa->province,
+                    'phone' => $this->empresa->phone,
+                    'email' => $this->empresa->email,
+                    'activity' => $this->empresa->activity,
+                    'cnae' => $this->empresa->cnae,
                     'contact_person' => $this->empresa->contact_person,
-                    'iban' => $this->empresa->iban,
-                    'social_security' => $this->empresa->ss_company,
-                ]);
+                    'company_iban' => $this->empresa->iban,
+                    'ss_company' => $this->empresa->ss_company,
+                    'gestoria_name' => $this->empresa->gestoria_name,
+                    'gestoria_email' => $this->empresa->gestoria_email,
+                    'gestoria_phone' => $this->empresa->gestoria_phone,
+                    'legal_representative_phone' => $this->empresa->representative_phone,
+                ];
+
+                $defaults = array_merge($defaults, $empresaData);
             }
         }
+
+        $this->form->fill($defaults);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['operator_id'] = Auth::id();
 
-        // company_id comes from hidden field
+        // Asegura que business_line_id siempre tenga valor si el producto lo tiene
+        if (empty($data['business_line_id']) && !empty($data['product_id'])) {
+            $data['business_line_id'] = Product::find($data['product_id'])?->business_line_id;
+        }
+
         return $data;
     }
+
 
     protected function getFormSchema(): array
     {
@@ -58,19 +75,23 @@ class CreateSale extends CreateRecord
                 ->columns(3)
                 ->schema([
                     Forms\Components\Hidden::make('company_id'),
-                    Forms\Components\TextInput::make('company_cif')->label('CIF')->required()->disabled(),
+
+                    Forms\Components\TextInput::make('cif')->label('CIF')->required()->disabled(),
                     Forms\Components\TextInput::make('company_name')->label('Empresa')->required()->disabled(),
-                    Forms\Components\TextInput::make('company_address')->label('Dirección')->required()->disabled(),
-                    Forms\Components\TextInput::make('company_city')->label('Ciudad')->required()->disabled(),
-                    Forms\Components\TextInput::make('company_province')->label('Provincia')->required()->disabled(),
-                    Forms\Components\TextInput::make('company_postal_code')->label('Código postal')->required()->disabled(),
-                    Forms\Components\TextInput::make('company_phone')->label('Teléfono')->disabled(),
-                    Forms\Components\TextInput::make('company_email')->label('Email')->email()->disabled(),
-                    Forms\Components\TextInput::make('company_activity')->label('Actividad')->disabled(),
-                    Forms\Components\TextInput::make('company_cnae')->label('CNAE')->disabled(),
-                    Forms\Components\TextInput::make('contact_person')->label('Contacto')->disabled(),
-                    Forms\Components\TextInput::make('iban')->label('IBAN')->disabled(),
-                    Forms\Components\TextInput::make('social_security')->label('SS Empresa')->disabled(),
+                    Forms\Components\TextInput::make('address')->label('Dirección')->required()->disabled(),
+                    Forms\Components\TextInput::make('city')->label('Ciudad')->required()->disabled(),
+                    Forms\Components\TextInput::make('province')->label('Provincia')->required()->disabled(),
+                    Forms\Components\TextInput::make('phone')->label('Teléfono')->disabled(),
+                    Forms\Components\TextInput::make('email')->label('Email')->email()->disabled(),
+                    Forms\Components\TextInput::make('activity')->label('Actividad')->disabled(),
+                    Forms\Components\TextInput::make('cnae')->label('CNAE')->disabled(),
+                    Forms\Components\TextInput::make('contact_person')->label('Persona contacto')->disabled(),
+                    Forms\Components\TextInput::make('company_iban')->label('IBAN')->disabled(),
+                    Forms\Components\TextInput::make('ss_company')->label('SS Empresa')->disabled(),
+                    Forms\Components\TextInput::make('gestoria_name')->label('Gestoría')->disabled(),
+                    Forms\Components\TextInput::make('gestoria_email')->label('Email Gestoría')->disabled(),
+                    Forms\Components\TextInput::make('gestoria_phone')->label('Tel. Gestoría')->disabled(),
+                    Forms\Components\TextInput::make('legal_representative_phone')->label('Tel. Rep. Legal')->disabled(),
                 ]),
 
             Forms\Components\Section::make('📄 Detalles de la Venta')
@@ -81,25 +102,35 @@ class CreateSale extends CreateRecord
                         ->relationship('product', 'name')
                         ->searchable()
                         ->required()
-                        ->reactive(),
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            $product = Product::find($state);
+                            $set('sale_price', $product?->price ?? 0);
+                            $set('commission_amount', $product
+                                ? round($product->price * ($product->commission_percentage / 100), 2)
+                                : 0
+                            );
+                            $set('business_line_id', $product?->business_line_id ?? null);
+                        }),
+
+                    Forms\Components\Hidden::make('business_line_id')
+                        ->required()
+                        ->dehydrated(true),
 
                     Forms\Components\TextInput::make('sale_price')
                         ->label('Precio (€)')
                         ->numeric()
-                        ->default(fn (Get $get) => optional(Product::find($get('product_id')))->price ?? 0)
-                        ->disabled()
                         ->required()
+                        ->disabled()
                         ->dehydrated(true),
 
                     Forms\Components\TextInput::make('commission_amount')
                         ->label('Comisión (€)')
                         ->numeric()
-                        ->default(fn (Get $get) => (
-                            $product = Product::find($get('product_id'))
-                        ) ? round($product->price * ($product->commission_percentage / 100), 2) : 0)
-                        ->disabled()
                         ->required()
+                        ->disabled()
                         ->dehydrated(true),
+
 
                     Forms\Components\DatePicker::make('sale_date')
                         ->label('Fecha de venta')

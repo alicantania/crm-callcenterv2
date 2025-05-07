@@ -72,4 +72,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Company::class, 'assigned_operator_id');
     }
+    public function hasRole(array|string $roles): bool
+    {
+        return in_array($this->role->name, (array) $roles);
+    }
+
 }

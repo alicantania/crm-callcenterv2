@@ -31,13 +31,14 @@ class Sale extends Model
         'business_line_id',
 
         // Datos de la venta
-        'price',
+        'sale_price',
         'commission_amount',
         'sale_date',
         'operator_id',
 
         // Flujo de tramitación
         'tramitator_id',
+        'tramitated_at',
         'processing_date',
         'contract_number',
         'commission_paid_date',
@@ -69,6 +70,8 @@ class Sale extends Model
         // Campos auxiliares
         'iva_percentage',
         'additional_info',
+        'tracking_notes',
+
     ];
 
     // Relaciones

@@ -61,7 +61,7 @@ return new class extends Migration {
             $table->string('ss_student')->nullable();
 
             // Estado de la venta
-            $table->string('status')->default('pending'); // 'pending', 'in_process', 'processed'
+            $table->string('status')->default('pendiente'); // 'pending', 'in_process', 'processed'
 
             $table->timestamps();
         });
