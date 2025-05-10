@@ -16,6 +16,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use App\Models\Product;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 
 
@@ -191,6 +193,19 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+
+            ->query(function () {
+                $query = Sale::query();
+
+                // Solo filtra por operador si NO eres Superadmin (role_id = 4)
+                if (Auth::user()->role_id === 1) {
+                    $query->where('operator_id', Auth::id());
+                }
+
+                return $query;
+            })
+
+
             ->columns([
                 Tables\Columns\TextColumn::make('company_name')->label('Empresa'),
                 Tables\Columns\TextColumn::make('product.name')->label('Curso'),
@@ -209,6 +224,7 @@ class SaleResource extends Resource
                 ]),
             ])
             ->filters([])
+            ->defaultSort('sale_date', 'desc') // ← ORDENA POR FECHA MÁS RECIENTE PRIMERO
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])

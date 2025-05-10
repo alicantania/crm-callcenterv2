@@ -145,4 +145,9 @@ class CreateSale extends CreateRecord
                 ]),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return SaleResource::getUrl('index'); // Esto te lleva a /dashboard/sales
+    }
 }
