@@ -21,9 +21,11 @@ class EditSale extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $nuevoEstado = $data['status'] ?? null;
+
         if (
             $this->record->status !== 'tramitada' &&
-            $data['status'] === 'tramitada' &&
+            $nuevoEstado === 'tramitada' &&
             Auth::user()?->role_id !== 1
         ) {
             $data['tramitated_at'] = now();
@@ -32,6 +34,7 @@ class EditSale extends EditRecord
 
         return $data;
     }
+
 
     protected function getFormSchema(): array
     {

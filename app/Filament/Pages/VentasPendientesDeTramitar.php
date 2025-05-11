@@ -83,6 +83,27 @@ class VentasPendientesDeTramitar extends Page implements HasTable
                     ->modalHeading('Tramitar venta')
                     ->modalSubmitActionLabel('Guardar')
                     ->modalCancelActionLabel('Cancelar'),
+
+                Action::make('devolver')
+                 ->label('Devolver al operador')
+                 ->color('danger')
+                ->icon('heroicon-m-x-circle')
+                ->form([
+                    Textarea::make('observations')
+                         ->label('Motivo de la devolución')
+                        ->required()
+                        ->rows(4),
+                    ])
+                ->action(function (array $data, Sale $record) {
+                    $record->update([
+                        'status' => 'devuelta',
+                        'observations' => $data['observations'],
+                    ]);
+                })
+                ->requiresConfirmation()
+                ->modalHeading('Devolver venta al operador')
+                ->modalSubmitActionLabel('Devolver')
+                ->modalCancelActionLabel('Cancelar'),
             ]);
     }
 }

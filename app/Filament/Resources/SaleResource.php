@@ -226,17 +226,43 @@ class SaleResource extends Resource
             ->filters([])
             ->defaultSort('sale_date', 'desc') // ← ORDENA POR FECHA MÁS RECIENTE PRIMERO
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                ->visible(false),
+                Tables\Actions\Action::make('corregir')
+                    ->label('Corregir venta')
+                    ->icon('heroicon-m-pencil-square')
+                    ->color('warning')
+                    ->visible(fn ($record) =>
+                        $record->status === 'devuelta' && $record->operator_id === auth()->id()
+                    )
+                    ->url(fn ($record) => SaleResource::getUrl('create', ['venta_id' => $record->id]))
+                    //->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
+            
     }
 
     public static function getRelations(): array
     {
         return [];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        if (auth()->user()?->role_id === 1) {
+            return auth()->user()->sales()->where('status', 'devuelta')->count() ?: null;
+        }
+
+        return null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger'; // rojo si hay devueltas
+    }
+
 
     public static function getPages(): array
     {

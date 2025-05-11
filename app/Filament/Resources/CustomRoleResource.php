@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\RoleResource\Pages;
-use App\Filament\Resources\RoleResource\RelationManagers;
+use App\Filament\Resources\CustomRoleResource\Pages;
+use App\Filament\Resources\CustomRoleResource\RelationManagers;
 use App\Models\Role;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,9 +14,17 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 
-class RoleResource extends Resource
+class CustomRoleResource extends Resource
 {
     protected static ?string $model = Role::class;
+    protected static ?string $navigationGroup = 'Seguridad';
+    protected static ?int $navigationSort = -1;
+    
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
+    }
+    
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -56,6 +64,10 @@ class RoleResource extends Resource
             //
         ];
     }
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role_id === 4;
+    }
 
     public static function getPages(): array
     {
@@ -65,4 +77,5 @@ class RoleResource extends Resource
             'edit' => Pages\EditRole::route('/{record}/edit'),
         ];
     }
+
 }

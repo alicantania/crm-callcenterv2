@@ -2,21 +2,21 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\BusinessLine;
+use Illuminate\Database\Seeder;
 
 class BusinessLineSeeder extends Seeder
 {
     public function run(): void
     {
-        BusinessLine::factory()->create([
-            'name' => 'Formación bonificada',
-            'description' => 'Cursos con créditos FUNDAE',
-        ]);
+        $lines = [
+            ['name' => 'Formación bonificada', 'description' => 'Cursos con créditos FUNDAE'],
+            ['name' => 'Implantaciones privadas', 'description' => 'Soluciones sin créditos FUNDAE'],
+        ];
 
-        BusinessLine::factory()->create([
-            'name' => 'Implantaciones privadas',
-            'description' => 'Servicios personalizados sin bonificación',
-        ]);
+        foreach ($lines as $line) {
+            BusinessLine::firstOrCreate(['name' => $line['name']], ['description' => $line['description']]);
+        }
     }
 }
+

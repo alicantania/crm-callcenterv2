@@ -8,6 +8,7 @@ use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Get;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
 class CreateSale extends CreateRecord
@@ -15,6 +16,7 @@ class CreateSale extends CreateRecord
     protected static string $resource = SaleResource::class;
 
     public ?Company $empresa = null;
+    public ?\App\Models\Sale $venta = null;
 
     public function mount(): void
     {
@@ -52,6 +54,14 @@ class CreateSale extends CreateRecord
             }
         }
 
+        if ($ventaId = request()->get('venta_id')) {
+            $this->venta = \App\Models\Sale::findOrFail($ventaId);
+
+            if ($this->venta->status === 'devuelta' && $this->venta->operator_id === Auth::id()) {
+                $defaults = array_merge($defaults, $this->venta->toArray());
+            }
+        }
+
         $this->form->fill($defaults);
     }
 
@@ -59,14 +69,12 @@ class CreateSale extends CreateRecord
     {
         $data['operator_id'] = Auth::id();
 
-        // Asegura que business_line_id siempre tenga valor si el producto lo tiene
         if (empty($data['business_line_id']) && !empty($data['product_id'])) {
             $data['business_line_id'] = Product::find($data['product_id'])?->business_line_id;
         }
 
         return $data;
     }
-
 
     protected function getFormSchema(): array
     {
@@ -75,7 +83,6 @@ class CreateSale extends CreateRecord
                 ->columns(3)
                 ->schema([
                     Forms\Components\Hidden::make('company_id'),
-
                     Forms\Components\TextInput::make('cif')->label('CIF')->required()->disabled(),
                     Forms\Components\TextInput::make('company_name')->label('Empresa')->required()->disabled(),
                     Forms\Components\TextInput::make('address')->label('Dirección')->required()->disabled(),
@@ -131,7 +138,6 @@ class CreateSale extends CreateRecord
                         ->disabled()
                         ->dehydrated(true),
 
-
                     Forms\Components\DatePicker::make('sale_date')
                         ->label('Fecha de venta')
                         ->default(now())
@@ -148,6 +154,32 @@ class CreateSale extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return SaleResource::getUrl('index'); // Esto te lleva a /dashboard/sales
+        return SaleResource::getUrl('index');
+    }
+
+    public function create(bool $another = false): void
+    {
+        $data = $this->mutateFormDataBeforeCreate($this->form->getState());
+
+        if ($this->venta) {
+            $this->venta->update(array_merge($data, [
+                'status' => 'pendiente',
+                'observations' => null,
+            ]));
+
+            Notification::make()
+                ->title('Venta corregida y reenviada a tramitación.')
+                ->success()
+                ->send();
+        } else {
+            $this->model = $this->handleRecordCreation($data);
+
+            Notification::make()
+                ->title('Venta creada correctamente.')
+                ->success()
+                ->send();
+        }
+
+        $this->redirect($this->getRedirectUrl());
     }
 }

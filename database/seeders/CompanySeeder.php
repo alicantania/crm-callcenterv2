@@ -11,7 +11,7 @@ class CompanySeeder extends Seeder
     public function run(): void
     {
         // Crear 20 empresas
-        Company::factory(20)->create()->each(function ($empresa, $index) {
+        Company::factory(200)->create()->each(function ($empresa, $index) {
             if ($index < 10) {
                 // 50% de empresas SIN operador (para llamar)
                 $empresa->updateQuietly([

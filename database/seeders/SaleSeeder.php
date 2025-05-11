@@ -20,7 +20,7 @@ class SaleSeeder extends Seeder
             return; // Si no hay datos, no hacer nada
         }
 
-        foreach (range(1, 20) as $i) {
+        foreach (range(1, 400) as $i) {
             $product = $productos->random();
             $productId = $product->id;
 
@@ -69,7 +69,9 @@ class SaleSeeder extends Seeder
                 'ss_company' => fake()->bothify('SS-#####'),
                 'ss_student' => fake()->bothify('SS-#####'),
 
-                'status' => 'pendiente',
+                'status' => fake()->randomElement([
+                    'pendiente', 'tramitada', 'seguimiento', 'devuelta', 'incidentada', 'anulada', 'liquidada',
+                ]),
             ]);
         }
     }

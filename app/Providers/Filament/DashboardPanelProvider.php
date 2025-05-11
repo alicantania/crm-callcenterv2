@@ -2,27 +2,25 @@
 
 namespace App\Providers\Filament;
 
-use App\Models\Company;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use Filament\Actions\Action;
-use Filament\Facades\Filament;
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Notifications\Notification;
-use Filament\Pages;
+//use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+//use BezhanSalleh\FilamentShield\Resources\RoleResource;
+use App\Filament\Resources\CustomRoleResource;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Pages;
 use Filament\Widgets;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\AuthenticateSession;
+use Filament\Http\Middleware\Authenticate;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
+//use BezhanSalleh\FilamentShield\Resources\PermissionResource;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -36,18 +34,35 @@ class DashboardPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+
+            // Descubre tus recursos habituales...
+            ->discoverResources(
+                in: app_path('Filament/Resources'),
+                for: 'App\\Filament\\Resources'
+            )
+            // ...y aquí forzamos la inclusión del CustomRoleResource de Shield
+            ->resources([
+                CustomRoleResource::class,
+                
+            ])
+
+            // Luego el resto de tu configuración habitual:
+            ->discoverPages(
+                in: app_path('Filament/Pages'),
+                for: 'App\\Filament\\Pages'
+            )
             ->pages([
                 Pages\Dashboard::class,
                 \App\Filament\Pages\Operator\LlamadaManualPage::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->discoverWidgets(
+                in: app_path('Filament/Widgets'),
+                for: 'App\\Filament\\Widgets'
+            )
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
-            
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -60,8 +75,10 @@ class DashboardPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                FilamentShieldPlugin::make(),
+                //FilamentShieldPlugin::make()
+                   
             ])
+            
             ->authMiddleware([
                 Authenticate::class,
             ]);

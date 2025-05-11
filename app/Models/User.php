@@ -6,13 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     use HasFactory;
     use Notifiable;
-    use HasRoles; 
 
     protected $fillable = [
         'name',
@@ -72,9 +70,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(Company::class, 'assigned_operator_id');
     }
+
     public function hasRole(array|string $roles): bool
     {
         return in_array($this->role->name, (array) $roles);
     }
 
+    // ✅ RELACIONES NECESARIAS PARA EL DASHBOARD DEL OPERADOR
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'operator_id');
+    }
+
+    public function calls()
+    {
+        return $this->hasMany(Call::class, 'user_id');
+    }
 }
