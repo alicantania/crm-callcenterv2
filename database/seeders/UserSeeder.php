@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -16,41 +17,43 @@ class UserSeeder extends Seeder
             'name' => 'Superadmin',
             'last_name' => 'CRM',
             'middle_name' => 'CallCenter',
-            'email' => 'superadmin@crm.com',
-            'password' => bcrypt('1234'),
+            'password' => Hash::make('1234'),
             'role_id' => 4,
         ]);
 
         // 2 tramitadores
         foreach (range(1, 2) as $i) {
-            User::create([
+            User::updateOrCreate([
+                'email' => "admin$i@crm.com",
+            ], [
                 'name' => "Admin $i",
                 'last_name' => "Apellidos",
                 'middle_name' => "Admin$i",
-                'email' => "admin$i@crm.com",
-                'password' => bcrypt('1234'),
+                'password' => Hash::make('1234'),
                 'role_id' => 2,
             ]);
         }
 
         // 1 gerente
-        User::create([
+        User::updateOrCreate([
+            'email' => 'gerente@crm.com',
+        ], [
             'name' => 'Gerente',
             'last_name' => 'Apellidos',
             'middle_name' => 'Responsable',
-            'email' => 'gerente@crm.com',
-            'password' => bcrypt('1234'),
+            'password' => Hash::make('1234'),
             'role_id' => 3,
         ]);
 
         // 25 operadores
         foreach (range(1, 25) as $i) {
-            User::create([
+            User::updateOrCreate([
+                'email' => "operador$i@crm.com",
+            ], [
                 'name' => "Operador $i",
                 'last_name' => "Apellidos",
                 'middle_name' => "Operador$i",
-                'email' => "operador$i@crm.com",
-                'password' => bcrypt('1234'),
+                'password' => Hash::make('1234'),
                 'role_id' => 1,
             ]);
         }
