@@ -54,6 +54,7 @@ class OperatorDashboard extends Page
             ->where('operator_id', Auth::id())
             ->whereBetween('sale_date', [now()->subDays(30), now()])
             ->groupByRaw('DATE(sale_date)')
+            ->orderBy('fecha')
             ->pluck('total', 'fecha')
             ->toArray();
     }

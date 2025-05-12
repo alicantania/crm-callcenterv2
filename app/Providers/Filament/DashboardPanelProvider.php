@@ -2,9 +2,8 @@
 
 namespace App\Providers\Filament;
 
-//use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-//use BezhanSalleh\FilamentShield\Resources\RoleResource;
 use App\Filament\Resources\CustomRoleResource;
+use App\Filament\Widgets\DashboardGlobal;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -20,7 +19,6 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
-//use BezhanSalleh\FilamentShield\Resources\PermissionResource;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -31,22 +29,17 @@ class DashboardPanelProvider extends PanelProvider
             ->id('dashboard')
             ->path('dashboard')
             ->login()
+            ->brandName('CRM Call Center')
             ->colors([
                 'primary' => Color::Amber,
             ])
-
-            // Descubre tus recursos habituales...
             ->discoverResources(
                 in: app_path('Filament/Resources'),
                 for: 'App\\Filament\\Resources'
             )
-            // ...y aquí forzamos la inclusión del CustomRoleResource de Shield
             ->resources([
                 CustomRoleResource::class,
-                
             ])
-
-            // Luego el resto de tu configuración habitual:
             ->discoverPages(
                 in: app_path('Filament/Pages'),
                 for: 'App\\Filament\\Pages'
@@ -60,8 +53,9 @@ class DashboardPanelProvider extends PanelProvider
                 for: 'App\\Filament\\Widgets'
             )
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                //Widgets\AccountWidget::class,
+                //Widgets\FilamentInfoWidget::class,
+                \App\Filament\Widgets\DashboardGlobal::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -74,13 +68,13 @@ class DashboardPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->plugins([
-                //FilamentShieldPlugin::make()
-                   
-            ])
-            
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->homeUrl(fn () => route('filament.dashboard.pages.dashboard'))
+            ->renderHook(
+                'panels::page.body.start',
+                fn () => view('filament.widgets.dashboard-global'),
+            );
     }
 }
