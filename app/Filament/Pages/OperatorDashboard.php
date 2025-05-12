@@ -24,7 +24,6 @@ class OperatorDashboard extends Page
     public $pendientesHoy = 0;
     public array $ventasPorDia = [];
 
-
     public function mount(): void
     {
         $userId = Auth::id();
@@ -51,7 +50,7 @@ class OperatorDashboard extends Page
             ->count();
 
         $this->ventasPorDia = Sale::selectRaw('DATE(sale_date) as fecha, COUNT(*) as total')
-            ->where('operator_id', Auth::id())
+            ->where('operator_id', $userId)
             ->whereBetween('sale_date', [now()->subDays(30), now()])
             ->groupByRaw('DATE(sale_date)')
             ->orderBy('fecha')
@@ -62,11 +61,11 @@ class OperatorDashboard extends Page
     public function getStats(): array
     {
         return [
-            Stat::make('📦 Ventas este mes', $this->ventasMes),
-            Stat::make('📅 Ventas hoy', $this->ventasHoy),
-            Stat::make('📞 Llamadas hoy', $this->llamadasHoy),
-            Stat::make('📞 Llamadas ayer', $this->llamadasAyer),
-            Stat::make('⏰ Pendientes hoy', $this->pendientesHoy),
+            Stat::make('📦 Ventas este mes', "{$this->ventasMes} ventas"),
+            Stat::make('📅 Ventas hoy', "{$this->ventasHoy} ventas"),
+            Stat::make('📞 Llamadas hoy', "{$this->llamadasHoy} llamadas"),
+            Stat::make('📞 Llamadas ayer', "{$this->llamadasAyer} llamadas"),
+            Stat::make('⏰ Contactos para hoy', "{$this->pendientesHoy} pendientes"),
         ];
     }
 
