@@ -161,21 +161,16 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
 
-        /*
-        * Package Service Providers...
-        */
-        // Si el plugin Shield no usa auto-discovery, descomenta esta línea:
-        // BezhanSalleh\FilamentShield\FilamentShieldServiceProvider::class,
-
-        /*
-        * Application Service Providers...
-        */
         //App\Providers\Filament\FilamentServiceProvider::class,
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+
+        \Filament\FilamentServiceProvider::class,
+        \Filament\Support\SupportServiceProvider::class,
+        \Filament\Notifications\NotificationsServiceProvider::class,
     ],
 
 

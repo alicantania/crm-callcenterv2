@@ -6,6 +6,14 @@ use Illuminate\Support\ServiceProvider;
 use Faker\Generator;
 use Faker\Factory as FakerFactory;
 use Faker\Provider\Base;
+use App\Models\Sale;
+use App\Observers\SaleObserver;
+use Illuminate\Support\Facades\Blade;
+use Filament\Notifications\Livewire\NotificationsComponent;
+use Livewire\Livewire;
+use App\Livewire\CustomNotificationsComponent;
+use App\Notifications\EmpresasLiberadasNotification;
+
 
 
 class AppServiceProvider extends ServiceProvider
@@ -39,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // nada de Shield aquí
+        // Registra manualmente el componente de notificaciones de Filament
+        //Blade::component('filament-notifications::components.notifications', 'filament-notifications::notifications');
+        //Livewire::component('filament.notifications.notifications', CustomNotificationsComponent::class);
     }
 }

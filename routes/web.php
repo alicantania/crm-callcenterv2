@@ -23,3 +23,16 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// ✅ RUTA DE PRUEBA PARA VER NOTIFICACIONES
+use Filament\Notifications\Notification;
+
+Route::get('/test-filament-notification', function () {
+    Notification::make()
+        ->title('Notificación de prueba')
+        ->body('Esta es una notificación de prueba simple.')
+        ->success()
+        ->send();
+        
+    return redirect()->to('/admin')->with('message', 'Notificación enviada, deberías verla en el panel');
+});

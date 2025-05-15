@@ -66,11 +66,14 @@ class CallResource extends Resource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Operador')
-                    ->searchable(), // sin sortable()
+                    ->searchable()
+                    ->sortable(),
+                
             
                 TextColumn::make('company.name')
                     ->label('Empresa')
-                    ->searchable(), // sin sortable()
+                    ->searchable()
+                    ->sortable(),
             
                 TextColumn::make('call_date')
                     ->label('Fecha')

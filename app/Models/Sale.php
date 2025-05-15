@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Notification as LaravelNotification;
+use Illuminate\Notifications\Notification as LaravelBaseNotification;
+use App\Models\User;
 
 class Sale extends Model
 {
@@ -103,5 +106,35 @@ class Sale extends Model
     public function liquidator()
     {
         return $this->belongsTo(User::class, 'liquidated_by');
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($sale) {
+            // Buscar al primer usuario con rol Admin
+            $admin = User::whereHas('role', fn ($query) => $query->where('name', 'Admin'))->first();
+
+            if (! $admin) {
+                return;
+            }
+
+            LaravelNotification::send($admin, new class($sale) extends LaravelBaseNotification {
+                public function __construct(public $sale) {}
+
+                public function via($notifiable): array
+                {
+                    return ['database'];
+                }
+
+                public function toArray($notifiable): array
+                {
+                    return [
+                        'title' => '📝 Nueva venta pendiente de tramitar',
+                        'body' => "La empresa ID {$this->sale->company_id} tiene una venta creada por el operador ID {$this->sale->operator_id}.",
+                        'format' => 'filament',
+                    ];
+                }
+            });
+        });
     }
 }
