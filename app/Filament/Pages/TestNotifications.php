@@ -37,14 +37,14 @@ class TestNotifications extends Page
                         Auth::user()->notify(new FilamentPersistentNotification());
                     }
                 }),
-
+            
             Action::make('testFlashNotification')
                 ->label('Enviar notificación con Flash')
                 ->size(ActionSize::Large)
                 ->icon('heroicon-m-information-circle')
                 ->color('info')
                 ->action(function (): void {
-                    session()->flash('success', 'Esta es una notificación flash.');
+                    session()->flash('success', 'Esta es una notificación flashcon code.');
                     $this->redirect(TestNotifications::getUrl());
                 })
         ];
