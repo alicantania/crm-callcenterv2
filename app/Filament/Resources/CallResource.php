@@ -21,7 +21,10 @@ class CallResource extends Resource
 {
     protected static ?string $model = Call::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-phone';
+    protected static ?string $navigationLabel = 'Llamadas';
+    protected static ?string $modelLabel = 'Llamada';
+    protected static ?string $navigationGroup = 'Administración';
 
     public static function form(Form $form): Form
     {

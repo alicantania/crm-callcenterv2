@@ -10,6 +10,11 @@ use App\Models\User;
 
 class Sale extends Model
 {
+    public function saleTrackings()
+    {
+        return $this->hasMany(\App\Models\SaleTracking::class);
+    }
+
     use HasFactory;
 
     protected $fillable = [
@@ -118,23 +123,13 @@ class Sale extends Model
                 return;
             }
 
-            LaravelNotification::send($admin, new class($sale) extends LaravelBaseNotification {
-                public function __construct(public $sale) {}
-
-                public function via($notifiable): array
-                {
-                    return ['database'];
-                }
-
-                public function toArray($notifiable): array
-                {
-                    return [
-                        'title' => '📝 Nueva venta pendiente de tramitar',
-                        'body' => "La empresa ID {$this->sale->company_id} tiene una venta creada por el operador ID {$this->sale->operator_id}.",
-                        'format' => 'filament',
-                    ];
-                }
-            });
+            // Notificación persistente y compatible con Filament
+            \Filament\Notifications\Notification::make()
+                ->title('📝 Nueva venta pendiente de tramitar')
+                ->body('La venta #' . $sale->id . ' de la empresa "' . ($sale->company_name ?? 'N/A') . '" ha sido creada por el operador #' . $sale->operator_id . ' y está pendiente de tramitación.')
+                ->success()
+                ->persistent()
+                ->sendToDatabase($admin);
         });
     }
 }

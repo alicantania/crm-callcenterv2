@@ -226,8 +226,13 @@ class SaleResource extends Resource
             ->filters([])
             ->defaultSort('sale_date', 'desc') // ← ORDENA POR FECHA MÁS RECIENTE PRIMERO
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->url(fn ($record) => static::getUrl('view', ['record' => $record->id]))
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->color('info'),
                 Tables\Actions\EditAction::make()
-                ->visible(false),
+                    ->visible(fn () => \Illuminate\Support\Facades\Auth::user()->role_id !== 1),
                 Tables\Actions\Action::make('corregir')
                     ->label('Corregir venta')
                     ->icon('heroicon-m-pencil-square')
@@ -249,18 +254,32 @@ class SaleResource extends Resource
         return [];
     }
 
-    public static function getNavigationBadge(): ?string
+    /**
+     * Determina el valor del contador para mostrar en el menú de navegación
+     */
+    public static function getNavigationBadge(): ?string 
     {
+        // Operadores ven sus ventas devueltas pendientes
         if (auth()->user()?->role_id === 1) {
-            return auth()->user()->sales()->where('status', 'devuelta')->count() ?: null;
+            $count = auth()->user()->sales()->where('status', 'devuelta')->count();
+            return $count > 0 ? (string) $count : null;
         }
-
+        
+        // Admins y gerencia ven total de ventas
+        if (in_array(auth()->user()?->role_id, [2, 3, 4])) {
+            $count = static::getModel()::count(); 
+            return $count > 0 ? (string) $count : null;
+        }
+        
         return null;
     }
 
-    public static function getNavigationBadgeColor(): ?string
+    /**
+     * Define el color del badge según el rol del usuario
+     */
+    public static function getNavigationBadgeColor(): string 
     {
-        return 'danger'; // rojo si hay devueltas
+        return auth()->user()?->role_id === 1 ? 'danger' : 'success';
     }
 
 
@@ -270,6 +289,7 @@ class SaleResource extends Resource
             'index' => Pages\ListSales::route('/'),
             'create' => Pages\CreateSale::route('/create'),
             'edit' => Pages\EditSale::route('/{record}/edit'),
+            'view' => Pages\ViewSale::route('/{record}'),
         ];
     }
 }

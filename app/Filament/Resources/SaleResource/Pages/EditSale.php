@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Auth;
 
 class EditSale extends EditRecord
 {
+    public function mount($record): void
+    {
+        parent::mount($record);
+        if (\Illuminate\Support\Facades\Auth::user()?->role_id === 1) {
+            $this->redirect(
+                \App\Filament\Resources\SaleResource::getUrl('view', ['record' => $this->record->getKey()])
+            );
+        }
+    }
     protected static string $resource = SaleResource::class;
 
     protected function getHeaderActions(): array
@@ -22,6 +31,7 @@ class EditSale extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $nuevoEstado = $data['status'] ?? null;
+        $estadoAnterior = $this->record->status;
 
         if (
             $this->record->status !== 'tramitada' &&
@@ -30,6 +40,16 @@ class EditSale extends EditRecord
         ) {
             $data['tramitated_at'] = now();
             $data['tramitator_id'] = Auth::id();
+        }
+
+        // Lanzar toast SIEMPRE que cambie el estado
+        if ($nuevoEstado && $estadoAnterior !== $nuevoEstado) {
+            \Filament\Notifications\Notification::make()
+                ->title("Venta #{$this->record->id} actualizada")
+                ->body("Tu venta ha pasado a estado: {$nuevoEstado}.")
+                ->icon('heroicon-o-check')
+                ->color('success')
+                ->send();
         }
 
         return $data;

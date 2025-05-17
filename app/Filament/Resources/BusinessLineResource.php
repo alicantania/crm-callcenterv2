@@ -19,6 +19,10 @@ class BusinessLineResource extends Resource
     protected static ?string $model = BusinessLine::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Líneas de negocio';
+    protected static ?string $modelLabel = 'Línea de negocio';
+    protected static ?string $navigationGroup = 'Gerencia';
+    protected static ?int $navigationSort = 30;
 
     public static function form(Form $form): Form
     {

@@ -167,19 +167,78 @@ class CreateSale extends CreateRecord
                 'observations' => null,
             ]));
 
+            // Toast para el operador actual
             Notification::make()
                 ->title('Venta corregida y reenviada a tramitación.')
                 ->success()
                 ->send();
+
+            // Notificación PERSISTENTE a TODOS los administradores, gerentes y superadmins
+            $this->notificarATodosLosAdministradores(
+                'Venta corregida pendiente de tramitar',
+                'La venta #' . $this->venta->id . ' de la empresa "' . $this->venta->company_name . '" ha sido corregida y está pendiente de tramitación.'
+            );
         } else {
             $this->model = $this->handleRecordCreation($data);
 
+            // Toast para el operador actual
             Notification::make()
                 ->title('Venta creada correctamente.')
                 ->success()
                 ->send();
+
+            // Notificación PERSISTENTE a TODOS los administradores, gerentes y superadmins
+            if ($this->model) {
+                $this->notificarATodosLosAdministradores(
+                    'Nueva venta pendiente de tramitar',
+                    'La venta #' . $this->model->id . ' de la empresa "' . $this->model->company_name . '" ha sido creada y está pendiente de tramitación.'
+                );
+            }
         }
 
         $this->redirect($this->getRedirectUrl());
+    }
+
+    protected function notificarATodosLosAdministradores(string $titulo, string $mensaje): void
+    {
+        // Obtener TODOS los usuarios con roles administrativos (Admin=2, Gerencia=3, SuperAdmin=4)
+        $usuarios = \App\Models\User::whereIn('role_id', [2, 3, 4])->get();
+        
+        // Si no hay usuarios, no hacemos nada
+        if ($usuarios->isEmpty()) {
+            return;
+        }
+
+        // Determinar qué modelo usar (venta nueva o corregida)
+        $venta = null;
+        $ventaId = null;
+        $companyName = null;
+
+        if (isset($this->venta) && $this->venta) {
+            // Caso de corrección de venta
+            $venta = $this->venta;
+            $ventaId = $this->venta->id;
+            $companyName = $this->venta->company_name;
+        } else if (isset($this->model) && $this->model) {
+            // Caso de venta nueva
+            $venta = $this->model;
+            $ventaId = $this->model->id;
+            $companyName = $this->model->company_name;
+        } else {
+            // No tenemos ni venta ni modelo válido
+            return;
+        }
+
+        // Por cada usuario administrativo, enviamos una notificación PERSISTENTE directamente
+        foreach ($usuarios as $usuario) {
+            \Illuminate\Support\Facades\Notification::send(
+                $usuario,
+                new \App\Notifications\VentaActualizadaNotification(
+                    $ventaId,
+                    'pendiente',
+                    $companyName
+                )
+            );
+        }
     }
 }

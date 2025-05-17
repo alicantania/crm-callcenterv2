@@ -27,6 +27,28 @@ class VentasPendientesDeTramitar extends Page implements HasTable
     protected static string $view = 'filament.pages.ventas-pendientes-de-tramitar';
     protected static ?string $navigationLabel = 'Ventas pendientes de tramitar';
     protected static ?string $title = 'Ventas pendientes de tramitar';
+    protected static ?string $navigationGroup = 'Ventas';
+    protected static ?int $navigationSort = 20;
+    
+    /**
+     * Muestra el número de ventas pendientes de tramitar como un badge en el menú lateral
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        return Sale::query()
+            ->where('status', 'pendiente')
+            ->whereNull('tramitator_id')
+            ->count() ?: null;
+    }
+    
+    /**
+     * Define el color del badge: rojo si hay ventas pendientes
+     */
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $count = static::getNavigationBadge();
+        return $count ? 'danger' : null;
+    }
 
     public function table(Tables\Table $table): Tables\Table
     {
@@ -75,6 +97,25 @@ class VentasPendientesDeTramitar extends Page implements HasTable
                             ->rows(3),
                     ])
                     ->action(function (array $data, Sale $record) {
+                        $estadoAnterior = $record->status;
+                        $nuevoEstado = $data['status'] ?? null;
+                        if ($nuevoEstado && $estadoAnterior !== $nuevoEstado) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Venta #{$record->id} actualizada")
+                                ->body("Tu venta ha pasado a estado: {$nuevoEstado}.")
+                                ->icon('heroicon-o-check')
+                                ->color('success')
+                                ->send();
+                        }
+                        // Registrar el tracking del cambio de estado
+                        \App\Models\SaleTracking::create([
+                            'sale_id'    => $record->id,
+                            'old_status' => $record->status, // status antes del update
+                            'new_status' => $data['status'],
+                            'notes'      => $data['tracking_notes'] ?? null,
+                            'changed_by' => auth()->id(),
+                        ]);
+
                         // Actualizar la venta
                         $record->update([
                             'contract_number' => $data['contract_number'],
@@ -84,41 +125,15 @@ class VentasPendientesDeTramitar extends Page implements HasTable
                             'tramitated_at'   => now(),
                         ]);
 
-                        // Enviar notificación al operador en la base de datos
-                        DB::table('notifications')->insert([
-                            'id' => Str::uuid(),
-                            'type' => 'App\\Notifications\\VentaTramitadaNotification',
-                            'notifiable_id' => $record->operator->id,
-                            'notifiable_type' => 'App\\Models\\User',
-                            'data' => json_encode([
-                                'title' => "Venta #{$record->id} tramitada",
-                                'body' => "Su venta ha pasado a estado: {$record->status}.",
-                                'format' => 'filament',
-                                'icon' => 'heroicon-o-check',
-                                'iconColor' => 'success',
-                                'actions' => [],
-                            ]),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        // También notificar al tramitador
-                        DB::table('notifications')->insert([
-                            'id' => Str::uuid(),
-                            'type' => 'App\\Notifications\\VentaTramitadaNotification',
-                            'notifiable_id' => auth()->id(),
-                            'notifiable_type' => 'App\\Models\\User',
-                            'data' => json_encode([
-                                'title' => "Venta #{$record->id} tramitada",
-                                'body' => "La venta ha pasado a estado: {$record->status}.",
-                                'format' => 'filament',
-                                'icon' => 'heroicon-o-check',
-                                'iconColor' => 'success',
-                                'actions' => [],
-                            ]),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                        // Notificar SOLO al operador (creador de la venta)
+                        $operator = $record->operator;
+                        if ($operator) {
+                            $operator->notify(new \App\Notifications\VentaActualizadaNotification(
+                                $record->id,
+                                $record->status,
+                                $record->company_name
+                            ));
+                        }
 
                         // Mantener el evento
                         event(new DatabaseNotificationsSent($record->operator));
@@ -145,15 +160,30 @@ class VentasPendientesDeTramitar extends Page implements HasTable
                             'observations' => $data['observations'],
                         ]);
 
-                        // Notificar al operador sobre la devolución
-                        Notification::make()
-                            ->title("Venta #{$record->id} devuelta")
-                            ->body("Motivo: {$data['observations']}")
-                            ->danger()
-                            ->sendToDatabase($record->operator);
-
-                        // Emitir evento para notificaciones en tiempo real
-                        event(new DatabaseNotificationsSent($record->operator));
+                        // Notificar al operador sobre la devolución - Método directo más fiable
+                        if ($record->operator) {
+                            // 1. Notificación usando Filament
+                            Notification::make()
+                                ->title("‼️ VENTA DEVUELTA - Acción requerida")
+                                ->body("Tu venta #{$record->id} ha sido DEVUELTA. Motivo: {$data['observations']}")
+                                ->danger()
+                                ->persistent()
+                                ->sendToDatabase($record->operator);
+                            
+                            // 2. Doble notificación usando Laravel Notifications para mayor fiabilidad
+                            \Illuminate\Support\Facades\Notification::send(
+                                $record->operator,
+                                new \App\Notifications\VentaActualizadaNotification(
+                                    $record->id,
+                                    'devuelta',
+                                    $record->company_name,
+                                    "Motivo de devolución: {$data['observations']}"
+                                )
+                            );
+                            
+                            // 3. Emitir evento para notificaciones en tiempo real
+                            event(new DatabaseNotificationsSent($record->operator));
+                        }
                     })
                     ->requiresConfirmation()
                     ->modalHeading('Devolver venta al operador')

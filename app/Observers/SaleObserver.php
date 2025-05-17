@@ -15,9 +15,41 @@ class SaleObserver
             return;
         }
 
-        $new = $sale->status;
+        $oldStatus = $sale->getOriginal('status');
+        $newStatus = $sale->status;
+        $notes = $sale->tracking_notes ?? null;
+        $userId = auth()->id();
 
-        match ($new) {
+        // Registrar tracking
+        \App\Models\SaleTracking::create([
+            'sale_id'    => $sale->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'notes'      => $notes,
+            'changed_by' => $userId,
+        ]);
+
+        // Notificar SIEMPRE al operador
+        $operator = $sale->operator;
+        if ($operator) {
+            // Notificación persistente (campanita)
+            $operator->notify(new \App\Notifications\VentaActualizadaNotification(
+                $sale->id,
+                $sale->status,
+                $sale->company_name
+            ));
+
+            // Toast voladora (solo título y estado)
+            \Filament\Notifications\Notification::make()
+                ->title("Venta #{$sale->id} actualizada")
+                ->body("Tu venta ha pasado a estado: {$sale->status}.")
+                ->icon('heroicon-o-check')
+                ->color('success')
+                ->send($operator);
+        }
+
+        // Mantener notificaciones a otros roles si aplica
+        match ($newStatus) {
             'pendiente' => $this->notifyTramitadores($sale),
             'devuelta'  => $this->notifyOperador($sale),
             'tramitada' => $this->notifyGerencia($sale),
