@@ -31,6 +31,7 @@ class UserResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Usuarios';
     protected static ?string $modelLabel = 'Usuario';
+    protected static ?string $pluralModelLabel = 'Usuarios';
     protected static ?string $navigationGroup = 'Gerencia';
     protected static ?int $navigationSort = 10;
 
@@ -86,39 +87,73 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-        ->columns([
-            TextColumn::make('name')
-                ->label('Nombre')
-                ->sortable()
-                ->searchable(),
-                
-            TextColumn::make('email')
-                ->label('Correo Electrónico')
-                ->sortable()
-                ->searchable(),
-                
-            TextColumn::make('role.name')
-                ->label('Rol')
-                ->sortable()
-                ->searchable(),
-                
+            ->defaultSort('name')
+            ->columns([
+                TextColumn::make('name')
+                    ->label('Nombre')
+                    ->sortable()
+                    ->searchable()
+                    ->wrap(),
+                    
+                TextColumn::make('email')
+                    ->label('Correo')
+                    ->sortable()
+                    ->searchable()
+                    ->wrap(),
+                    
+                TextColumn::make('role.name')
+                    ->label('Rol')
+                    ->sortable()
+                    ->searchable(),
+                    
+                BadgeColumn::make('role.name')
+                    ->label('Estado')
+                    ->colors([
+                        'primary' => 'Admin',
+                        'success' => 'Gerencia',
+                        'warning' => 'Operador',
+                        'danger' => 'SuperAdmin',
+                    ])
+                    ->sortable(),
+                    
                 BooleanColumn::make('active')
-                ->label('Estado')
-                ->sortable()
-                ->toggleable()  // Usamos toggle() para permitir cambiar el valor de "activo" directamente
-                ->trueIcon('heroicon-o-check-circle') // Icono para cuando es activo
-                ->falseIcon('heroicon-o-x-circle') // Icono para cuando es inactivo
-                
-        ])
-        ->filters([
-            // Puedes agregar filtros aquí si lo deseas
-        ])
-        ->actions([
-            // Puedes definir acciones personalizadas, por ejemplo: Editar, Eliminar
-        ])
-        ->bulkActions([
-            // Puedes agregar acciones en masa aquí
-        ]);
+                    ->label('Activo')
+                    ->sortable()
+                    ->toggleable()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
+                    
+                TextColumn::make('last_login_at')
+                    ->label('Último acceso')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('role')
+                    ->relationship('role', 'name')
+                    ->searchable()
+                    ->preload(),
+                    
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('Solo activos')
+                    ->default(true),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->deferLoading()
+            ->persistFiltersInSession()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array

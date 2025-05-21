@@ -20,6 +20,7 @@ class CompanyResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $navigationLabel = 'Empresas';
     protected static ?string $modelLabel = 'Empresa';
+    protected static ?string $pluralModelLabel = 'Empresas';
     protected static ?string $navigationGroup = 'Administración';
 
     public static function form(Form $form): Form
@@ -77,56 +78,88 @@ class CompanyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('name')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre de la empresa')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable()
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('cif')
                     ->label('CIF')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('address')
                     ->label('Dirección')
-                    ->sortable(),
+                    ->searchable()
+                    ->toggleable()
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('city')
                     ->label('Ciudad')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('province')
                     ->label('Provincia')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
-                    ->searchable(),
-                    
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable()
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('activity')
                     ->label('Actividad')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('cnae')
                     ->label('CNAE')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('province')
+                    ->label('Provincia')
+                    ->options(fn () => \App\Models\Company::query()
+                        ->distinct('province')
+                        ->pluck('province', 'province'))
                     ->searchable(),
-        ])
-        ->filters([
-            // Aquí podemos agregar filtros si lo necesitamos
-        ])
-        ->actions([
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-        ])
-        ->bulkActions([
-            // Aquí agregamos las acciones en masa, si es necesario
-        ]);
+                
+                Tables\Filters\SelectFilter::make('city')
+                    ->label('Ciudad')
+                    ->options(fn () => \App\Models\Company::query()
+                        ->distinct('city')
+                        ->pluck('city', 'city'))
+                    ->searchable(),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->deferLoading()
+            ->persistFiltersInSession()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array

@@ -23,6 +23,7 @@ class ProductResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Productos';
     protected static ?string $modelLabel = 'Producto';
+    protected static ?string $pluralModelLabel = 'Productos';
     protected static ?string $navigationGroup = 'Gerencia';
     protected static ?int $navigationSort = 40;
 
@@ -63,22 +64,65 @@ class ProductResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('name')
             ->columns([
-                TextColumn::make('name')->label('Nombre')->searchable(),
-                TextColumn::make('price')->label('Precio (€)')->sortable(),
-                TextColumn::make('commission_percentage')->label('Comisión (%)')->sortable(),
-                TextColumn::make('businessLine.name')->label('Línea de negocio'),
-                ToggleColumn::make('available')->label('Disponible'),
+                TextColumn::make('name')
+                    ->label('Nombre')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                    
+                TextColumn::make('price')
+                    ->label('Precio (€)')
+                    ->sortable()
+                    ->money('EUR')
+                    ->alignEnd(),
+                    
+                TextColumn::make('commission_percentage')
+                    ->label('Comisión (%)')
+                    ->sortable()
+                    ->suffix('%')
+                    ->alignEnd(),
+                    
+                TextColumn::make('businessLine.name')
+                    ->label('Línea de negocio')
+                    ->searchable()
+                    ->sortable(),
+                    
+                ToggleColumn::make('available')
+                    ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger'),
+                    
+                TextColumn::make('created_at')
+                    ->label('Creado')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('businessLine')
+                    ->relationship('businessLine', 'name')
+                    ->searchable()
+                    ->preload(),
+                    
+                Tables\Filters\TernaryFilter::make('available')
+                    ->label('Solo disponibles')
+                    ->default(true),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->deferLoading()
+            ->persistFiltersInSession()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array

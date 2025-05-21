@@ -26,6 +26,8 @@ class SaleResource extends Resource
     protected static ?string $model = Sale::class;
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Ventas';
+    protected static ?string $modelLabel = 'Venta';
+    protected static ?string $pluralModelLabel = 'Ventas';
 
     public static function form(FilamentForm $form): FilamentForm
     {
@@ -193,9 +195,10 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-
+            ->defaultSort('sale_date', 'desc')
             ->query(function () {
-                $query = Sale::query();
+                $query = Sale::query()
+                    ->with(['product', 'businessLine', 'operator']);
 
                 // Solo filtra por operador si NO eres Superadmin (role_id = 4)
                 if (Auth::user()->role_id === 1) {

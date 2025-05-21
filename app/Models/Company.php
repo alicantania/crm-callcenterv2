@@ -20,7 +20,9 @@ class Company extends Model
         'email',
         'activity',
         'cnae',
-        'assigned_operator_id', // <- Este es el nombre correcto según tu base de datos
+        'assigned_operator_id',
+        'metadata',
+        'contact_person',
     ];
 
     // Relación con el operador asignado

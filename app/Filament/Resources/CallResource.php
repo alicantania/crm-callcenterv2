@@ -24,6 +24,7 @@ class CallResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-phone';
     protected static ?string $navigationLabel = 'Llamadas';
     protected static ?string $modelLabel = 'Llamada';
+    protected static ?string $pluralModelLabel = 'Llamadas';
     protected static ?string $navigationGroup = 'Administración';
 
     public static function form(Form $form): Form
@@ -66,40 +67,80 @@ class CallResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('call_date', 'desc')
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Operador')
                     ->searchable()
-                    ->sortable(),
-                
-            
+                    ->sortable()
+                    ->wrap(),
+                    
                 TextColumn::make('company.name')
                     ->label('Empresa')
                     ->searchable()
-                    ->sortable(),
-            
+                    ->sortable()
+                    ->wrap(),
+                    
                 TextColumn::make('call_date')
                     ->label('Fecha')
-                    ->date()
+                    ->date('d/m/Y')
                     ->sortable(),
-            
+                    
                 TextColumn::make('call_time')
                     ->label('Hora')
+                    ->time('H:i')
                     ->sortable(),
-            
+                    
                 TextColumn::make('duration')
                     ->label('Duración (min)')
-                    ->sortable(),
+                    ->sortable()
+                    ->alignEnd(),
+                    
+                TextColumn::make('notes')
+                    ->label('Notas')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(50),
             ])
-            
-            ->filters([])
+            ->filters([
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Filtrar por operador'),
+                    
+                Tables\Filters\Filter::make('call_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('call_from')
+                            ->label('Desde'),
+                        Forms\Components\DatePicker::make('call_until')
+                            ->label('Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['call_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('call_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['call_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('call_date', '<=', $date),
+                            );
+                    }),
+            ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->deferLoading()
+            ->persistFiltersInSession()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array
