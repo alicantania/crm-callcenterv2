@@ -31,18 +31,26 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 
     public function mount(): void
     {
-        $this->empresa = Company::query()
-            ->where(function ($query) {
-                $query->whereNull('assigned_operator_id')
-                      ->orWhere('assigned_operator_id', Auth::id());
-            })
-            ->inRandomOrder()
-            ->first();
+        // Usar la sesión para mantener la empresa fija
+        $empresaId = session('llamada_manual_empresa_id');
+        if ($empresaId) {
+            $this->empresa = Company::find($empresaId);
+        } else {
+            $this->empresa = Company::query()
+                ->where(function ($query) {
+                    $query->whereNull('assigned_operator_id')
+                          ->orWhere('assigned_operator_id', Auth::id());
+                })
+                ->inRandomOrder()
+                ->first();
 
-        if ($this->empresa && $this->empresa->assigned_operator_id === null) {
-            $this->empresa->updateQuietly(['assigned_operator_id' => Auth::id()]);
+            if ($this->empresa && $this->empresa->assigned_operator_id === null) {
+                $this->empresa->updateQuietly(['assigned_operator_id' => Auth::id()]);
+            }
+            if ($this->empresa) {
+                session(['llamada_manual_empresa_id' => $this->empresa->id]);
+            }
         }
-
         $this->form->fill();
     }
 
@@ -50,57 +58,364 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Section::make("📞 Resultado de la llamada")
-                    ->description("Completa la información con cuidado para registrar correctamente el resultado de la llamada.")
-                    ->schema([
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\Select::make('resultado')
-                                ->label('Resultado')
-                                ->options([
-                                    'no_interesa' => 'No interesa',
-                                    'no_contesta' => 'No contesta',
-                                    'volver_a_llamar' => 'Volver a llamar',
-                                    'contacto' => 'Contacto',
-                                    'error' => 'Error',
+                Forms\Components\Tabs::make('LlamadaManualTabs')
+                    ->tabs([
+                        Forms\Components\Tabs\Tab::make('Empresa')
+                            ->schema([
+                                Forms\Components\Section::make('Datos de la Empresa')
+                                    ->columns(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('empresa_nombre')
+                                            ->label('Nombre empresa')
+                                            ->default(fn() => $this->empresa?->name)
+                                            ->required(),
+                                        Forms\Components\TextInput::make('empresa_cif')
+                                            ->label('CIF')
+                                            ->default(fn() => $this->empresa?->cif)
+                                            ->required(),
+                                        Forms\Components\TextInput::make('empresa_address')
+                                            ->label('Dirección')
+                                            ->default(fn() => $this->empresa?->address),
+                                        Forms\Components\TextInput::make('empresa_city')
+                                            ->label('Ciudad')
+                                            ->default(fn() => $this->empresa?->city),
+                                        Forms\Components\TextInput::make('empresa_province')
+                                            ->label('Provincia')
+                                            ->default(fn() => $this->empresa?->province),
+                                        Forms\Components\TextInput::make('empresa_phone')
+                                            ->label('Teléfono')
+                                            ->default(fn() => $this->empresa?->phone),
+                                        Forms\Components\TextInput::make('empresa_email')
+                                            ->label('Email')
+                                            ->default(fn() => $this->empresa?->email),
+                                        Forms\Components\TextInput::make('empresa_activity')
+                                            ->label('Actividad')
+                                            ->default(fn() => $this->empresa?->activity),
+                                        Forms\Components\TextInput::make('empresa_cnae')
+                                            ->label('CNAE')
+                                            ->default(fn() => $this->empresa?->cnae),
+                                        Forms\Components\TextInput::make('empresa_contact_person')
+                                            ->label('Persona contacto')
+                                            ->default(fn() => $this->empresa?->contact_person),
+                                        Forms\Components\TextInput::make('empresa_iban')
+                                            ->label('IBAN')
+                                            ->default(fn() => $this->empresa?->iban),
+                                        Forms\Components\TextInput::make('empresa_ss_company')
+                                            ->label('SS Empresa')
+                                            ->default(fn() => $this->empresa?->ss_company),
+                                    ]),
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('guardar_empresa')
+                                        ->label('Guardar datos de empresa')
+                                        ->action('guardarEmpresa')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-building-office')
                                 ])
-                                ->reactive()
-                                ->required()
-                                ->columnSpanFull(),
-
-                            Forms\Components\TextInput::make('motivo_desinteres')
-                                ->label('Motivo del desinterés')
-                                ->placeholder('Ej: No tiene créditos, No quiere hacer cursos...')
-                                ->visible(fn (callable $get) => $get('resultado') === 'no_interesa')
-                                ->required(fn (callable $get) => $get('resultado') === 'no_interesa')
-                                ->columnSpanFull(),
-                        ]),
-
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\DateTimePicker::make('fecha_rellamada')
-                                ->label('📅 ¿Cuándo volver a llamar?')
-                                ->minutesStep(5)
-                                ->withoutSeconds()
-                                ->displayFormat('d/m/Y H:i')
-                                ->native(false)
-                                ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
-
-                            Forms\Components\TextInput::make('contacto')
-                                ->label('👤 Persona de contacto')
-                                ->placeholder('Nombre de quien atiende...'),
-                        ]),
-
-                        Forms\Components\Textarea::make('comentarios')
-                            ->label('📝 Comentarios adicionales')
-                            ->autosize()
-                            ->rows(4)
-                            ->placeholder('Observaciones sobre la llamada...')
-                            ->columnSpanFull(),
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Representante Legal')
+                            ->schema([
+                                Forms\Components\Section::make('Representante Legal')
+                                    ->columns(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('rep_legal_nombre')
+                                            ->label('Nombre representante')
+                                            ->default(fn() => $this->empresa?->legal_representative_name),
+                                        Forms\Components\TextInput::make('rep_legal_dni')
+                                            ->label('DNI representante')
+                                            ->default(fn() => $this->empresa?->legal_representative_dni),
+                                        Forms\Components\TextInput::make('rep_legal_telefono')
+                                            ->label('Teléfono representante')
+                                            ->default(fn() => $this->empresa?->representative_phone),
+                                    ]),
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('guardar_representante')
+                                        ->label('Guardar representante')
+                                        ->action('guardarRepresentante')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-user')
+                                ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Gestoría')
+                            ->schema([
+                                Forms\Components\Section::make('Gestoría')
+                                    ->columns(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('gestoria_nombre')
+                                            ->label('Nombre gestoría')
+                                            ->default(fn() => $this->empresa?->gestoria_name),
+                                        Forms\Components\TextInput::make('gestoria_cif')
+                                            ->label('CIF gestoría')
+                                            ->default(fn() => $this->empresa?->gestoria_cif),
+                                        Forms\Components\TextInput::make('gestoria_telefono')
+                                            ->label('Teléfono gestoría')
+                                            ->default(fn() => $this->empresa?->gestoria_phone),
+                                        Forms\Components\TextInput::make('gestoria_email')
+                                            ->label('Email gestoría')
+                                            ->default(fn() => $this->empresa?->gestoria_email),
+                                    ]),
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('guardar_gestoria')
+                                        ->label('Guardar gestoría')
+                                        ->action('guardarGestoria')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-briefcase')
+                                ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Historial de Llamadas')
+                            ->schema([
+                                Forms\Components\Section::make('Historial de llamadas a la empresa')
+                                    ->description('Aquí puedes ver el historial de llamadas previas a esta empresa.')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('historial_llamadas')
+                                            ->content(fn() => 'Aquí irá el historial de llamadas (solo lectura).')
+                                    ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Documentos')
+                            ->schema([
+                                Forms\Components\Section::make('Documentos de la empresa')
+                                    ->description('Aquí puedes adjuntar y ver documentos relacionados con la empresa.')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('documentos')
+                                            ->content('Funcionalidad de documentos pendiente de implementar.')
+                                    ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Notas internas')
+                            ->schema([
+                                Forms\Components\Section::make('Notas internas del operador')
+                                    ->description('Solo visibles para operadores y administración.')
+                                    ->schema([
+                                        Forms\Components\Textarea::make('nota_interna')
+                                            ->label('Nota interna')
+                                            ->rows(4),
+                                    ]),
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('guardar_nota')
+                                        ->label('Guardar nota interna')
+                                        ->action('guardarNotaInterna')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-pencil')
+                                ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Curso Interesado')
+                            ->schema([
+                                Forms\Components\Section::make('Información de interés del cliente')
+                                    ->description('Consulta y edita lo que se habló con el cliente en la última llamada.')
+                                    ->columns(2)
+                                    ->schema([
+                                        Forms\Components\Select::make('curso_interesado')
+                                            ->label('Curso')
+                                            ->options(function () {
+                                                return \App\Models\Product::with('businessLine')->get()->mapWithKeys(function ($product) {
+                                                    $linea = $product->businessLine ? ' (' . $product->businessLine->name . ')' : '';
+                                                    return [$product->id => $product->name . $linea];
+                                                })->toArray();
+                                            })
+                                            ->searchable()
+                                            ->required()
+                                            ->reactive(),
+                                        Forms\Components\TextInput::make('linea_negocio_interesada')
+                                            ->label('Línea de negocio')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->default(function ($get) {
+                                                $cursoId = $get('curso_interesado');
+                                                if ($cursoId) {
+                                                    $product = \App\Models\Product::with('businessLine')->find($cursoId);
+                                                    return $product && $product->businessLine ? $product->businessLine->name : '';
+                                                }
+                                                return '';
+                                            }),
+                                        Forms\Components\TextInput::make('precio_interesado')
+                                            ->label('Precio (€)')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->default(function ($get) {
+                                                $cursoId = $get('curso_interesado');
+                                                if ($cursoId) {
+                                                    $product = \App\Models\Product::find($cursoId);
+                                                    return $product ? $product->price : '';
+                                                }
+                                                return '';
+                                            }),
+                                        Forms\Components\TextInput::make('comision_interesada')
+                                            ->label('Comisión (€)')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->default(function ($get) {
+                                                $cursoId = $get('curso_interesado');
+                                                if ($cursoId) {
+                                                    $product = \App\Models\Product::find($cursoId);
+                                                    return $product ? $product->commission_percentage : '';
+                                                }
+                                                return '';
+                                            }),
+                                        Forms\Components\Select::make('modalidad_interesada')
+                                            ->label('Modalidad interesada')
+                                            ->options([
+                                                'online' => 'Online',
+                                                'presencial' => 'Presencial',
+                                                'mixto' => 'Mixto',
+                                            ])
+                                            ->default(fn() => $this->empresa?->modalidad_interesada),
+                                        Forms\Components\DatePicker::make('fecha_interes')
+                                            ->label('Fecha de interés')
+                                            ->default(fn() => $this->empresa?->fecha_interes),
+                                        Forms\Components\Textarea::make('observaciones_interes')
+                                            ->label('Observaciones de interés')
+                                            ->rows(3)
+                                            ->default(fn() => $this->empresa?->observaciones_interes),
+                                    ]),
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('guardar_curso_interesado')
+                                        ->label('Guardar interés de cliente')
+                                        ->action('guardarCursoInteresado')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-academic-cap')
+                                ])
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Resultado de la llamada')
+                            ->schema([
+                                Forms\Components\Section::make("📞 Resultado de la llamada")
+                                    ->description("Completa la información con cuidado para registrar correctamente el resultado de la llamada.")
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)->schema([
+                                            Forms\Components\Select::make('resultado')
+                                                ->label('Resultado')
+                                                ->options([
+                                                    'no_interesa' => 'No interesa',
+                                                    'no_contesta' => 'No contesta',
+                                                    'volver_a_llamar' => 'Volver a llamar',
+                                                    'contacto' => 'Contacto',
+                                                    'error' => 'Error',
+                                                ])
+                                                ->reactive()
+                                                ->required()
+                                                ->columnSpanFull(),
+                                            Forms\Components\TextInput::make('motivo_desinteres')
+                                                ->label('Motivo del desinterés')
+                                                ->placeholder('Ej: No tiene créditos, No quiere hacer cursos...')
+                                                ->visible(fn (callable $get) => $get('resultado') === 'no_interesa')
+                                                ->required(fn (callable $get) => $get('resultado') === 'no_interesa')
+                                                ->columnSpanFull(),
+                                        ]),
+                                        Forms\Components\Grid::make(2)->schema([
+                                            Forms\Components\DateTimePicker::make('fecha_rellamada')
+                                                ->label('📅 ¿Cuándo volver a llamar?')
+                                                ->minutesStep(5)
+                                                ->withoutSeconds()
+                                                ->displayFormat('d/m/Y H:i')
+                                                ->native(false)
+                                                ->visible(fn (callable $get) => in_array($get('resultado'), ['volver_a_llamar', 'contacto'])),
+                                            Forms\Components\TextInput::make('contacto')
+                                                ->label('👤 Persona de contacto')
+                                                ->placeholder('Nombre de quien atiende...'),
+                                        ]),
+                                        Forms\Components\Textarea::make('comentarios')
+                                            ->label('📝 Comentarios adicionales')
+                                            ->autosize()
+                                            ->rows(4)
+                                            ->placeholder('Observaciones sobre la llamada...')
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(1)
+                                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                            ])
                     ])
-                    ->columns(1)
-                    ->icon('heroicon-o-chat-bubble-bottom-center-text'),
             ])
             ->statePath('formData')
             ->model(Call::class);
+    }
+
+    public function guardarEmpresa()
+    {
+        if (! $this->empresa) {
+            Notification::make()
+                ->title('❌ No hay empresa asignada')
+                ->danger()
+                ->send();
+            return;
+        }
+        $data = $this->form->getRawState();
+        $this->empresa->update([
+            'name' => $data['empresa_nombre'] ?? $this->empresa->name,
+            'cif' => $data['empresa_cif'] ?? $this->empresa->cif,
+            'address' => $data['empresa_address'] ?? $this->empresa->address,
+            'city' => $data['empresa_city'] ?? $this->empresa->city,
+            'province' => $data['empresa_province'] ?? $this->empresa->province,
+            'phone' => $data['empresa_phone'] ?? $this->empresa->phone,
+            'email' => $data['empresa_email'] ?? $this->empresa->email,
+            'activity' => $data['empresa_activity'] ?? $this->empresa->activity,
+            'cnae' => $data['empresa_cnae'] ?? $this->empresa->cnae,
+            'contact_person' => $data['empresa_contact_person'] ?? $this->empresa->contact_person,
+            'iban' => $data['empresa_iban'] ?? $this->empresa->iban,
+            'ss_company' => $data['empresa_ss_company'] ?? $this->empresa->ss_company,
+        ]);
+        Notification::make()
+            ->title('✅ Datos de empresa actualizados')
+            ->success()
+            ->send();
+    }
+
+    public function guardarRepresentante()
+    {
+        if (! $this->empresa) {
+            Notification::make()
+                ->title('❌ No hay empresa asignada')
+                ->danger()
+                ->send();
+            return;
+        }
+        $data = $this->form->getRawState();
+        $this->empresa->update([
+            'legal_representative_name' => $data['rep_legal_nombre'] ?? $this->empresa->legal_representative_name,
+            'legal_representative_dni' => $data['rep_legal_dni'] ?? $this->empresa->legal_representative_dni,
+            'representative_phone' => $data['rep_legal_telefono'] ?? $this->empresa->representative_phone,
+        ]);
+        Notification::make()
+            ->title('✅ Representante legal actualizado')
+            ->success()
+            ->send();
+    }
+
+    public function guardarGestoria()
+    {
+        if (! $this->empresa) {
+            Notification::make()
+                ->title('❌ No hay empresa asignada')
+                ->danger()
+                ->send();
+            return;
+        }
+        $data = $this->form->getRawState();
+        $this->empresa->update([
+            'gestoria_name' => $data['gestoria_nombre'] ?? $this->empresa->gestoria_name,
+            'gestoria_cif' => $data['gestoria_cif'] ?? $this->empresa->gestoria_cif,
+            'gestoria_phone' => $data['gestoria_telefono'] ?? $this->empresa->gestoria_phone,
+            'gestoria_email' => $data['gestoria_email'] ?? $this->empresa->gestoria_email,
+        ]);
+        Notification::make()
+            ->title('✅ Gestoría actualizada')
+            ->success()
+            ->send();
+    }
+
+    public function guardarNotaInterna()
+    {
+        if (! $this->empresa) {
+            Notification::make()
+                ->title('❌ No hay empresa asignada')
+                ->danger()
+                ->send();
+            return;
+        }
+        $data = $this->form->getRawState();
+        $this->empresa->update([
+            'internal_note' => $data['nota_interna'] ?? null,
+        ]);
+        Notification::make()
+            ->title('✅ Nota interna guardada')
+            ->success()
+            ->send();
     }
 
     public function submit(): void
@@ -136,6 +451,8 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             ->success()
             ->send();
 
+        // Limpiar la empresa de la sesión solo después de registrar la llamada
+        session()->forget('llamada_manual_empresa_id');
         $this->redirect('/dashboard/llamada-manual-page');
     }
 
