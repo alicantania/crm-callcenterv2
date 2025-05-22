@@ -5,6 +5,8 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use Illuminate\Contracts\View\View;
 
+use App\Helpers\RoleHelper;
+
 class ReporteVentasOperador extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
@@ -14,7 +16,7 @@ class ReporteVentasOperador extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && auth()->user()?->role?->name !== 'Operador';
+        return auth()->check() && (RoleHelper::userHasRole(['Gerencia']) || RoleHelper::userHasRole(['Superadmin']));
     }
 
     public function getViewData(): array

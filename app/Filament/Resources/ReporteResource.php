@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Filament\Resources\SaleResource;
 use Filament\Notifications\Notification;
 
+use App\Helpers\RoleHelper;
+
 class ReporteResource extends Resource
 {
     protected static ?string $model = Sale::class;
@@ -25,8 +27,7 @@ class ReporteResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Solo visible para Gerencia, Admin y SuperAdmin
-        return Auth::check() && in_array(Auth::user()->role_id, [3, 4, 2]);
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public static function form(Form $form): Form

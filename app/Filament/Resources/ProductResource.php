@@ -16,6 +16,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 
+use App\Helpers\RoleHelper;
+
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
@@ -123,6 +125,11 @@ class ProductResource extends Resource
             ->deferLoading()
             ->persistFiltersInSession()
             ->paginated([10, 25, 50, 100]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public static function getRelations(): array

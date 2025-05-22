@@ -19,6 +19,8 @@ use Filament\Notifications\Events\DatabaseNotificationsSent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+use App\Helpers\RoleHelper;
+
 class VentasPendientesDeTramitar extends Page implements HasTable
 {
     use InteractsWithTable;
@@ -29,6 +31,14 @@ class VentasPendientesDeTramitar extends Page implements HasTable
     protected static ?string $title = 'Ventas pendientes de tramitar';
     protected static ?string $navigationGroup = 'Ventas';
     protected static ?int $navigationSort = 20;
+    
+    /**
+     * Muestra el número de ventas pendientes de tramitar como un badge en el menú lateral
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Administrador', 'Gerencia']);
+    }
     
     /**
      * Muestra el número de ventas pendientes de tramitar como un badge en el menú lateral

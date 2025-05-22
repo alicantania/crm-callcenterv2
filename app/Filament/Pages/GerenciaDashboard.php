@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\User;
 use App\Models\BusinessLine;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\RoleHelper;
 
 class GerenciaDashboard extends Page
 {
@@ -56,8 +57,8 @@ class GerenciaDashboard extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Solo visible para Gerencia, Admin y SuperAdmin
-        return Auth::check() && in_array(Auth::user()->role_id, [3, 4, 2]);
+        // Solo visible para Gerencia y Superadmin
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public function updated($property)

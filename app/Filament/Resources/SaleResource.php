@@ -17,12 +17,15 @@ use Filament\Forms\Get;
 use App\Models\Product;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\RoleHelper;
 
 
 
 
 class SaleResource extends Resource
 {
+    protected static ?string $navigationGroup = null;
+    protected static ?int $navigationSort = 3;
     protected static ?string $model = Sale::class;
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Ventas';
@@ -200,8 +203,8 @@ class SaleResource extends Resource
                 $query = Sale::query()
                     ->with(['product', 'businessLine', 'operator']);
 
-                // Solo filtra por operador si NO eres Superadmin (role_id = 4)
-                if (Auth::user()->role_id === 1) {
+                // Si es operador, solo ve sus ventas
+                if (RoleHelper::userHasRole(['Operador'])) {
                     $query->where('operator_id', Auth::id());
                 }
 
@@ -210,14 +213,16 @@ class SaleResource extends Resource
 
 
             ->columns([
-                Tables\Columns\TextColumn::make('company_name')->label('Empresa'),
-                Tables\Columns\TextColumn::make('product.name')->label('Curso'),
-                Tables\Columns\TextColumn::make('sale_price')->label('Precio'),
-                Tables\Columns\TextColumn::make('commission_amount')->label('Comisión'),
-                Tables\Columns\TextColumn::make('sale_date')->date()->label('Fecha'),
+                Tables\Columns\TextColumn::make('company_name')->label('Empresa')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('cif')->label('CIF')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('product.name')->label('Curso')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('sale_price')->label('Precio')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('commission_amount')->label('Comisión')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('sale_date')->date()->label('Fecha venta')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('status')
                 ->label('Estado')
                 ->badge()
+                ->sortable()
                 ->colors([
                     'gray' => 'pendiente',
                     'info' => 'tramitada',
@@ -235,7 +240,7 @@ class SaleResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->color('info'),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn () => \Illuminate\Support\Facades\Auth::user()->role_id !== 1),
+                    ->visible(fn ($record) => !RoleHelper::userHasRole(['Operador'])),
                 Tables\Actions\Action::make('corregir')
                     ->label('Corregir venta')
                     ->icon('heroicon-m-pencil-square')
@@ -263,13 +268,13 @@ class SaleResource extends Resource
     public static function getNavigationBadge(): ?string 
     {
         // Operadores ven sus ventas devueltas pendientes
-        if (auth()->user()?->role_id === 1) {
+        if (RoleHelper::userHasRole(['Operador'])) {
             $count = auth()->user()->sales()->where('status', 'devuelta')->count();
             return $count > 0 ? (string) $count : null;
         }
         
         // Admins y gerencia ven total de ventas
-        if (in_array(auth()->user()?->role_id, [2, 3, 4])) {
+        if (RoleHelper::userHasRole(['Administrador', 'Gerencia'])) {
             $count = static::getModel()::count(); 
             return $count > 0 ? (string) $count : null;
         }

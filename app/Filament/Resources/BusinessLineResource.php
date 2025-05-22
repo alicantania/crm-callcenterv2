@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 
+use App\Helpers\RoleHelper;
+
 class BusinessLineResource extends Resource
 {
     protected static ?string $model = BusinessLine::class;
@@ -51,6 +53,11 @@ class BusinessLineResource extends Resource
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public static function getRelations(): array

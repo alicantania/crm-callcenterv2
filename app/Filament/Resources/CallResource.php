@@ -17,6 +17,8 @@ use Filament\Tables\Columns\BadgeColumn;
 
 
 
+use App\Helpers\RoleHelper;
+
 class CallResource extends Resource
 {
     protected static ?string $model = Call::class;
@@ -143,11 +145,14 @@ class CallResource extends Resource
             ->paginated([10, 25, 50, 100]);
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Administrador', 'Gerencia']);
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

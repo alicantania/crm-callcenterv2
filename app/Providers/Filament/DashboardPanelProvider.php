@@ -19,7 +19,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
-use App\Filament\Pages\TestNotifications;
+
 
 
 class DashboardPanelProvider extends PanelProvider
@@ -50,7 +50,7 @@ class DashboardPanelProvider extends PanelProvider
             )
             ->pages([
                 Pages\Dashboard::class,
-                TestNotifications::class,
+                
                 \App\Filament\Pages\Operator\LlamadaManualPage::class,
                 //\Filament\Notifications\Pages\NotificationsPage::class,
             ])

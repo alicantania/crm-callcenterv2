@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use App\Helpers\RoleHelper;
+
 class CompanyResource extends Resource
 {
     protected static ?string $model = Company::class;
@@ -162,11 +164,14 @@ class CompanyResource extends Resource
             ->paginated([10, 25, 50, 100]);
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Gerencia']);
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

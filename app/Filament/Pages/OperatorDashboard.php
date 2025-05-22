@@ -9,8 +9,12 @@ use Filament\Pages\Page;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
 
+use App\Helpers\RoleHelper;
+
 class OperatorDashboard extends Page
 {
+    protected static ?string $navigationGroup = null;
+    protected static ?int $navigationSort = 2;
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
     protected static string $view = 'filament.pages.operator-dashboard';
     protected static ?string $navigationLabel = 'Resumen del operador';
@@ -23,6 +27,11 @@ class OperatorDashboard extends Page
     public $llamadasAyer = 0;
     public $pendientesHoy = 0;
     public array $ventasPorDia = [];
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Operador', 'Superadmin']);
+    }
 
     public function mount(): void
     {

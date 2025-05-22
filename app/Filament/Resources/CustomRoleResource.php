@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 
+use App\Helpers\RoleHelper;
+
 class CustomRoleResource extends Resource
 {
     protected static ?string $model = Role::class;
@@ -22,7 +24,7 @@ class CustomRoleResource extends Resource
     
     public static function shouldRegisterNavigation(): bool
     {
-        return true;
+        return RoleHelper::userHasRole(['Gerencia']);
     }
     
 

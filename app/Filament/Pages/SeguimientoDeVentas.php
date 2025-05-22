@@ -8,6 +8,7 @@ use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
+use App\Models\SaleTracking;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
@@ -16,6 +17,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
+
+use App\Helpers\RoleHelper;
 
 class SeguimientoDeVentas extends Page implements HasTable
 {
@@ -27,6 +30,14 @@ class SeguimientoDeVentas extends Page implements HasTable
     protected static ?string $title = 'Seguimiento de ventas';
     protected static ?string $navigationGroup = 'Ventas';
     protected static ?int $navigationSort = 10;
+    
+    /**
+     * Muestra el número de ventas en seguimiento en el menú lateral
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Administrador', 'Gerencia']);
+    }
     
     /**
      * Muestra el número de ventas en seguimiento en el menú lateral
@@ -55,12 +66,12 @@ class SeguimientoDeVentas extends Page implements HasTable
                     ->where('status', '!=', 'pendiente')
             )
             ->columns([
-                TextColumn::make('company_name')->label('Empresa')->searchable(),
-                TextColumn::make('product.name')->label('Curso'),
-                TextColumn::make('sale_date')->date()->label('Fecha venta'),
-                TextColumn::make('status')->label('Estado')->badge(),
-                TextColumn::make('tramitator.name')->label('Tramitador'),
-                TextColumn::make('tramitated_at')->label('Tramitada el')->date(),
+                TextColumn::make('company_name')->label('Empresa')->searchable()->sortable(),
+                TextColumn::make('product.name')->label('Curso')->searchable()->sortable(),
+                TextColumn::make('sale_date')->date()->label('Fecha venta')->searchable()->sortable(),
+                TextColumn::make('status')->label('Estado')->badge()->searchable()->sortable(),
+                TextColumn::make('tramitator.name')->label('Tramitador')->searchable()->sortable(),
+                TextColumn::make('tramitated_at')->label('Tramitada el')->date()->searchable()->sortable(),
             ])
             ->actions([
                 Action::make('actualizar_estado')
@@ -105,6 +116,15 @@ class SeguimientoDeVentas extends Page implements HasTable
                                 ));
                             }
                         }
+                        // Guardar registro en SaleTracking
+                        SaleTracking::create([
+                            'sale_id'    => $record->id,
+                            'old_status' => $record->status,
+                            'new_status' => $data['status'],
+                            'notes'      => $data['tracking_notes'] ?? null,
+                            'changed_by' => Auth::id(),
+                        ]);
+
                         $record->update([
                             'status' => $data['status'],
                             'tracking_notes' => $data['tracking_notes'],

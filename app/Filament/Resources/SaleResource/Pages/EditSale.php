@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
+use App\Models\SaleTracking;
 
 class EditSale extends EditRecord
 {
@@ -42,8 +43,17 @@ class EditSale extends EditRecord
             $data['tramitator_id'] = Auth::id();
         }
 
-        // Lanzar toast SIEMPRE que cambie el estado
+        // Lanzar toast y registrar tracking SIEMPRE que cambie el estado
         if ($nuevoEstado && $estadoAnterior !== $nuevoEstado) {
+            // Guardar registro en SaleTracking
+            SaleTracking::create([
+                'sale_id'     => $this->record->id,
+                'old_status'  => $estadoAnterior,
+                'new_status'  => $nuevoEstado,
+                'notes'       => $data['tracking_notes'] ?? null,
+                'changed_by'  => Auth::id(),
+            ]);
+
             \Filament\Notifications\Notification::make()
                 ->title("Venta #{$this->record->id} actualizada")
                 ->body("Tu venta ha pasado a estado: {$nuevoEstado}.")

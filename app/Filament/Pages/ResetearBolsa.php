@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Company;
 use Filament\Notifications\Notification;
 use App\Notifications\EmpresasLiberadasNotification;
+use App\Helpers\RoleHelper;
 
 class ResetearBolsa extends Page
 {
@@ -18,7 +19,8 @@ class ResetearBolsa extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::check() && Auth::user()?->role?->name !== 'Operador';
+        // Solo mostrar a todos menos 'Operador'
+        return RoleHelper::userHasNotRole(['Operador']);
     }
 
     public function resetear()

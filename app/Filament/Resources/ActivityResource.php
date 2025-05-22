@@ -10,6 +10,8 @@ use Filament\Forms;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Auth;
 
+use App\Helpers\RoleHelper;
+
 class ActivityResource extends Resource
 {
     protected static ?string $model = Activity::class;
@@ -22,8 +24,7 @@ class ActivityResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Solo visible para Gerencia, Admin y SuperAdmin
-        return Auth::check() && in_array(Auth::user()->role_id, [3, 4, 2]);
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public static function form(Form $form): Form
@@ -37,12 +38,12 @@ class ActivityResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i'),
-                Tables\Columns\TextColumn::make('causer.name')->label('Usuario'),
-                Tables\Columns\TextColumn::make('description')->label('Acción'),
-                Tables\Columns\TextColumn::make('subject_type')->label('Modelo'),
-                Tables\Columns\TextColumn::make('event')->label('Evento'),
-                Tables\Columns\TextColumn::make('properties')->label('Detalles')->limit(50),
+                Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('causer.name')->label('Usuario')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('description')->label('Acción')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('subject_type')->label('Modelo')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('event')->label('Evento')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('properties')->label('Detalles')->limit(50)->searchable()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('causer_id')

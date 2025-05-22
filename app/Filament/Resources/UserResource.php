@@ -24,6 +24,8 @@ use Filament\Tables\Columns\SelectColumn;
 
 
 
+use App\Helpers\RoleHelper;
+
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
@@ -154,6 +156,11 @@ class UserResource extends Resource
             ->deferLoading()
             ->persistFiltersInSession()
             ->paginated([10, 25, 50, 100]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return RoleHelper::userHasRole(['Gerencia']);
     }
 
     public static function getRelations(): array
