@@ -32,6 +32,7 @@ class Company extends Model
         'modalidad_interesada',
         'fecha_interes',
         'observaciones_interes',
+        'internal_note',
     ];
 
     // Relación con el operador asignado

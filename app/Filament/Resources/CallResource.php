@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
-
-
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
 
 use App\Helpers\RoleHelper;
 
@@ -44,6 +44,12 @@ class CallResource extends Resource
                     ->relationship('company', 'name')
                     ->searchable()
                     ->required(),
+
+                Forms\Components\Placeholder::make('company_phone')
+                    ->label('Teléfono de la empresa')
+                    ->reactive()
+                    ->content(fn (callable $get) => optional(\App\Models\Company::find($get('company_id')))->phone ?? '-')
+                    ->columnSpanFull(),
 
                 Forms\Components\DatePicker::make('call_date')
                     ->label('Fecha de llamada')
@@ -83,6 +89,12 @@ class CallResource extends Resource
                     ->sortable()
                     ->wrap(),
                     
+                TextColumn::make('company.phone')
+                    ->label('Teléfono')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                    
                 TextColumn::make('call_date')
                     ->label('Fecha')
                     ->date('d/m/Y')
@@ -90,7 +102,11 @@ class CallResource extends Resource
                     
                 TextColumn::make('call_time')
                     ->label('Hora')
-                    ->time('H:i')
+                    ->formatStateUsing(fn($state, $record) => $state
+                        ? substr($state, 0, 5)
+                        : ($record->call_date
+                            ? date('H:i', strtotime($record->call_date))
+                            : '-'))
                     ->sortable(),
                     
                 TextColumn::make('duration')
@@ -132,14 +148,8 @@ class CallResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->deferLoading()
             ->persistFiltersInSession()
             ->paginated([10, 25, 50, 100]);
@@ -159,8 +169,6 @@ class CallResource extends Resource
     {
         return [
             'index' => Pages\ListCalls::route('/'),
-            'create' => Pages\CreateCall::route('/create'),
-            'edit' => Pages\EditCall::route('/{record}/edit'),
         ];
     }
 }

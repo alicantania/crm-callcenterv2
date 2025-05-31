@@ -26,6 +26,7 @@ class CallSeeder extends Seeder
                 'company_id' => $faker->randomElement($empresas),
                 'user_id' => $faker->randomElement($operadores),
                 'call_date' => $faker->dateTimeBetween('-3 months', 'now'),
+                'call_time' => $faker->time('H:i:s'),
                 'duration' => rand(60, 900),
                 'status' => $faker->randomElement([
                     'interesado', 'no contesta', 'volver a llamar', 'venta', 'error', 'no interesa',

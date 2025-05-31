@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 
@@ -38,9 +39,11 @@ class ProductResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                TextInput::make('description')
+                Textarea::make('description')
                     ->label('Descripción')
-                    ->maxLength(1000),
+                    ->maxLength(1000)
+                    ->rows(5)
+                    ->columnSpanFull(),
 
                 TextInput::make('price')
                     ->label('Precio del producto (€)')
@@ -59,7 +62,8 @@ class ProductResource extends Resource
 
                 Toggle::make('available')
                     ->label('Disponible')
-                    ->default(true),
+                    ->default(true)
+                    ->visible(fn () => auth()->user()->role_id === 2),
             ]);
     }
 
@@ -94,7 +98,12 @@ class ProductResource extends Resource
                 ToggleColumn::make('available')
                     ->label('Disponible')
                     ->onColor('success')
-                    ->offColor('danger'),
+                    ->offColor('danger')
+                    ->visible(fn () => auth()->user()->role_id === 2),
+                TextColumn::make('available')
+                    ->label('Disponible')
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Sí' : 'No')
+                    ->visible(fn () => auth()->user()->role_id !== 2),
                     
                 TextColumn::make('created_at')
                     ->label('Creado')

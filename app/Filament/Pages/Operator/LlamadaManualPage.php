@@ -588,7 +588,8 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                                     ->schema([
                                         Forms\Components\Textarea::make('nota_interna')
                                             ->label('Nota interna')
-                                            ->rows(4),
+                                            ->rows(4)
+                                            ->default(fn () => $this->empresa?->internal_note),
                                     ]),
                                 Forms\Components\Actions::make([
                                     Forms\Components\Actions\Action::make('guardar_nota')
