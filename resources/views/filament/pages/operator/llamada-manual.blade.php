@@ -1,4 +1,35 @@
 <x-filament::page>
+    @php
+        $hayVenta = ($empresa) ? \App\Models\Sale::where('company_id', $empresa->id)->exists() : false;
+        $hayLlamadaHoy = ($empresa) ? $empresa->calls()->where('user_id', auth()->id())->whereDate('call_date', now()->toDateString())->exists() : false;
+        $permitirRefresco = !$empresa || $hayVenta || $hayLlamadaHoy;
+    @endphp
+
+    <script>
+        // Script que intercepta intentos de refrescar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Solo bloquear si hay una empresa y no tiene llamada o venta registrada
+            const permitirRefresco = {{ $permitirRefresco ? 'true' : 'false' }};
+            
+            if (!permitirRefresco) {
+                // Interceptar F5 y Ctrl+R
+                window.addEventListener('beforeunload', function(e) {
+                    // Cancelar el evento
+                    e.preventDefault();
+                    // Chrome requiere returnValue
+                    e.returnValue = '⚠️ ACCIÓN BLOQUEADA: Debes registrar el resultado de la llamada o crear una venta antes de refrescar la página.';
+                    // Mostrar mensaje al usuario
+                    return e.returnValue;
+                });
+                
+                // Mensaje de advertencia visible en la página
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-100';
+                alertDiv.innerHTML = '<strong>⚠️ IMPORTANTE:</strong> No puedes refrescar esta página hasta que registres el resultado de la llamada o crees una venta para la empresa actual.';
+                document.querySelector('.filament-page').prepend(alertDiv);
+            }
+        });
+    </script>
     @if ($empresa)
         <div x-data="{ confirmVenta: false }" class="space-y-6">
 
@@ -17,6 +48,9 @@
                 <div><strong>🏢 Actividad:</strong> {{ $empresa->activity }}</div>
                 <div><strong>🔢 CNAE:</strong> {{ $empresa->cnae }}</div>
             </div>
+            
+            <!-- Historial de Interacciones -->
+            @include('filament.components.historial-llamadas', ['empresa' => $empresa])
 
             <!-- Formulario -->
             <form wire:submit.prevent="submit">

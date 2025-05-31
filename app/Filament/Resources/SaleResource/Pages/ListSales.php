@@ -12,8 +12,7 @@ class ListSales extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        // No mostrar botón de crear venta, ya que las ventas solo se crean desde la página de llamada manual
+        return [];
     }
 }

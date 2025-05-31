@@ -29,51 +29,119 @@ class CompanyResource extends Resource
     {
         return $form
         ->schema([
-            Forms\Components\TextInput::make('name')
-                ->label('Nombre de la empresa')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('cif')
-                ->label('CIF')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('address')
-                ->label('Dirección')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('city')
-                ->label('Ciudad')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('province')
-                ->label('Provincia')
-                ->required()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('phone')
-                ->label('Teléfono')
-                ->nullable()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('email')
-                ->label('Email')
-                ->nullable()
-                ->maxLength(255)
-                ->email(),
-
-            Forms\Components\TextInput::make('activity')
-                ->label('Actividad')
-                ->nullable()
-                ->maxLength(255),
-
-            Forms\Components\TextInput::make('cnae')
-                ->label('CNAE')
-                ->nullable()
-                ->maxLength(255),
+            Forms\Components\Tabs::make('Tabs')
+                ->tabs([
+                    Forms\Components\Tabs\Tab::make('Datos básicos')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre de la empresa')
+                                ->required()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('cif')
+                                ->label('CIF')
+                                ->required()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('address')
+                                ->label('Dirección')
+                                ->required()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('city')
+                                ->label('Ciudad')
+                                ->required()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('province')
+                                ->label('Provincia')
+                                ->required()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Teléfono')
+                                ->nullable()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('email')
+                                ->label('Email')
+                                ->nullable()
+                                ->maxLength(255)
+                                ->email(),
+                
+                            Forms\Components\TextInput::make('activity')
+                                ->label('Actividad')
+                                ->nullable()
+                                ->maxLength(255),
+                
+                            Forms\Components\TextInput::make('cnae')
+                                ->label('CNAE')
+                                ->nullable()
+                                ->maxLength(255),
+                            
+                            Forms\Components\TextInput::make('contact_person')
+                                ->label('Persona de contacto')
+                                ->nullable()
+                                ->maxLength(255),
+                        ])->columns(2),
+                        
+                    Forms\Components\Tabs\Tab::make('Interés en cursos')
+                        ->schema([
+                            Forms\Components\Select::make('curso_interesado')
+                                ->label('Curso interesado')
+                                ->relationship('cursoInteresado', 'name')
+                                ->preload()
+                                ->searchable()
+                                ->nullable(),
+                                
+                            Forms\Components\Select::make('modalidad_interesada')
+                                ->label('Modalidad interesada')
+                                ->options([
+                                    'presencial' => 'Presencial',
+                                    'online' => 'Online',
+                                    'mixta' => 'Mixta',
+                                    'indiferente' => 'Indiferente',
+                                ])
+                                ->nullable(),
+                                
+                            Forms\Components\DatePicker::make('fecha_interes')
+                                ->label('Fecha de interés')
+                                ->nullable(),
+                                
+                            Forms\Components\Textarea::make('observaciones_interes')
+                                ->label('Observaciones')
+                                ->nullable()
+                                ->columnSpanFull(),
+                        ])->columns(2),
+                        
+                    Forms\Components\Tabs\Tab::make('Datos administrativos')
+                        ->schema([
+                            Forms\Components\Select::make('status')
+                                ->label('Estado')
+                                ->options(\App\Enums\CompanyStatus::class)
+                                ->nullable(),
+                                
+                            Forms\Components\Select::make('assigned_operator_id')
+                                ->label('Operador asignado')
+                                ->relationship('operator', 'name')
+                                ->preload()
+                                ->searchable()
+                                ->nullable(),
+                                
+                            Forms\Components\Toggle::make('locked_to_operator')
+                                ->label('Bloqueada para operador')
+                                ->default(false),
+                                
+                            Forms\Components\DateTimePicker::make('last_contact_at')
+                                ->label('Último contacto')
+                                ->disabled()
+                                ->nullable(),
+                                
+                            Forms\Components\TextInput::make('contacts_count')
+                                ->label('Número de contactos')
+                                ->disabled(),
+                        ])->columns(2),
+                ])->columnSpanFull(),
         ]);
     }
 

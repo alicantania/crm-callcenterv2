@@ -29,13 +29,13 @@
             </x-filament::card>
         </div>
 
-        {{-- Gráfico de ventas --}}
+        <!-- {{-- Gráfico de ventas --}}
         <x-filament::card>
             <x-slot name="header">
                 <h2 class="text-lg font-bold">📊 Ventas últimos 30 días</h2>
             </x-slot>
             <canvas id="ventasMesChart" height="100"></canvas>
-        </x-filament::card>
+        </x-filament::card> -->
     </div>
 
     @push('scripts')

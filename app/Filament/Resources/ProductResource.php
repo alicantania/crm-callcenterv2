@@ -114,12 +114,15 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => auth()->user()->role_id === 2), // Solo visible para gerencia
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn() => auth()->user()->role_id === 2), // Solo visible para gerencia
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()->role_id === 2), // Solo visible para gerencia
                 ]),
             ])
             ->deferLoading()
@@ -129,7 +132,7 @@ class ProductResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return RoleHelper::userHasRole(['Gerencia']);
+        return RoleHelper::userHasRole(['Gerencia', 'Operador']);
     }
 
     public static function getRelations(): array
@@ -141,10 +144,16 @@ class ProductResource extends Resource
 
     public static function getPages(): array
     {
-        return [
+        $pages = [
             'index' => Pages\ListProducts::route('/'),
-            'create' => Pages\CreateProduct::route('/create'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
+        
+        // Solo agregar las páginas de creación y edición para usuarios con rol de gerencia
+        if (auth()->check() && auth()->user()->role_id === 2) {
+            $pages['create'] = Pages\CreateProduct::route('/create');
+            $pages['edit'] = Pages\EditProduct::route('/{record}/edit');
+        }
+        
+        return $pages;
     }
 }

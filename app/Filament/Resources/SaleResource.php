@@ -216,8 +216,8 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('company_name')->label('Empresa')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('cif')->label('CIF')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('product.name')->label('Curso')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('sale_price')->label('Precio')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('commission_amount')->label('Comisión')->searchable()->sortable(),
+                //Tables\Columns\TextColumn::make('sale_price')->label('Precio')->searchable()->sortable(),
+                //Tables\Columns\TextColumn::make('commission_amount')->label('Comisión')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('sale_date')->date()->label('Fecha venta')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('status')
                 ->label('Estado')
@@ -241,6 +241,8 @@ class SaleResource extends Resource
                     ->color('info'),
                 Tables\Actions\EditAction::make()
                     ->visible(fn ($record) => !RoleHelper::userHasRole(['Operador'])),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => !RoleHelper::userHasRole(['Operador'])), // Solo gerencia puede eliminar
                 Tables\Actions\Action::make('corregir')
                     ->label('Corregir venta')
                     ->icon('heroicon-m-pencil-square')
@@ -252,7 +254,10 @@ class SaleResource extends Resource
                     //->openUrlInNewTab(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn () => !RoleHelper::userHasRole(['Operador'])), // Solo visible para gerencia
+                ]),
             ]);
             
     }

@@ -12,8 +12,13 @@ class ListProducts extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        // Solo mostrar el botón de crear para roles de gerencia
+        if (auth()->user()->role_id === 2) { // Gerencia
+            return [
+                Actions\CreateAction::make(),
+            ];
+        }
+        
+        return [];
     }
 }

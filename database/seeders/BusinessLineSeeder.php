@@ -7,6 +7,9 @@ use Illuminate\Database\Seeder;
 
 class BusinessLineSeeder extends Seeder
 {
+    /**
+     * Ejecuta el seeder para crear líneas de negocio.
+     */
     public function run(): void
     {
         $lines = [
