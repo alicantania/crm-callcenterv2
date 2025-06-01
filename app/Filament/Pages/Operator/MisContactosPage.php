@@ -25,6 +25,10 @@ class MisContactosPage extends Page implements HasTable
     protected static ?string $navigationGroup = 'Operador';
     protected static ?int $navigationSort = 20;
     protected static string $view = 'filament.pages.operator.mis-contactos';
+    /**
+     * Override the page title to remove 'Page' suffix and use Spanish.
+     */
+    protected static ?string $title = 'Mis contactos';
 
     public function table(Table $table): Table
     {
@@ -104,22 +108,7 @@ class MisContactosPage extends Page implements HasTable
                             );
                     }),
             ])
-            ->actions([
-                Tables\Actions\Action::make('ver_historial')
-                    ->label('Historial de llamadas')
-                    ->icon('heroicon-o-phone')
-                    ->color('info')
-                    ->modalHeading(fn (Company $record): string => "Historial de llamadas: {$record->name}")
-                    ->modalContent(fn (Company $record): string => $this->renderHistorialLlamadas($record))
-                    ->modalSubmitAction(false)
-                    ->modalCancelAction(false),
-                Tables\Actions\Action::make('llamar')
-                    ->label('Llamar')
-                    ->icon('heroicon-o-phone')
-                    ->color('success')
-                    ->url(fn (Company $record): string => route('filament.dashboard.pages.llamada-manual-page', ['empresa_id' => $record->id]))
-                    ->openUrlInNewTab(false),
-            ])
+            ->actions([])
             ->bulkActions([])
             ->paginated([10, 25, 50])
             ->deferLoading();

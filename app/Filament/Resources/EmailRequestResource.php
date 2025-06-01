@@ -12,6 +12,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\EmailRequestResource\Pages\CreateEmailRequest;
+use App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest;
+use App\Filament\Resources\EmailRequestResource\Pages\ViewEmailRequest;
 
 class EmailRequestResource extends Resource
 {
@@ -25,7 +28,16 @@ class EmailRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = static::$model::where('status', 'pending')->count();
+        $user = auth()->user();
+        if (method_exists($user, 'hasRole') && $user->hasRole('operator')) {
+            // Badge shows processed requests for the operator
+            $count = static::$model::where('status', 'processed')
+                ->where('requested_by_id', $user->id)
+                ->count();
+        } else {
+            // Admin badge shows pending requests
+            $count = static::$model::where('status', 'pending')->count();
+        }
         return $count > 0 ? (string) $count : null;
     }
 
@@ -43,6 +55,7 @@ class EmailRequestResource extends Resource
                         Forms\Components\Select::make('company_id')
                             ->relationship('company', 'name')
                             ->required()
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest)
                             ->searchable()
                             ->preload()
                             ->label('Empresa'),
@@ -50,6 +63,7 @@ class EmailRequestResource extends Resource
                         Forms\Components\Select::make('product_id')
                             ->relationship('product', 'name')
                             ->required()
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest)
                             ->searchable()
                             ->preload()
                             ->label('Curso/Producto'),
@@ -57,18 +71,21 @@ class EmailRequestResource extends Resource
                         Forms\Components\TextInput::make('email_to')
                             ->label('Email de destino')
                             ->email()
-                            ->required(),
+                            ->required()
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest),
                             
                         Forms\Components\TextInput::make('contact_person')
                             ->label('Persona de contacto')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest),
                             
                         Forms\Components\Select::make('requested_by_id')
                             ->relationship('requestedBy', 'name')
                             ->label('Solicitado por')
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest),
                     ])
                     ->columns(2),
                     
@@ -78,7 +95,8 @@ class EmailRequestResource extends Resource
                             ->label('Notas del operador')
                             ->helperText('Notas adicionales proporcionadas por el operador')
                             ->maxLength(65535)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->disabled(fn ($livewire) => $livewire instanceof \App\Filament\Resources\EmailRequestResource\Pages\EditEmailRequest),
                             
                         Forms\Components\Textarea::make('admin_notes')
                             ->label('Notas del administrador')
@@ -104,12 +122,14 @@ class EmailRequestResource extends Resource
                             ->label('Procesado por')
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('status') === 'processed'),
+                            ->visible(fn (Forms\Get $get) => $get('status') === 'processed')
+                            ->disabled(),
                             
                         Forms\Components\DateTimePicker::make('processed_at')
                             ->label('Fecha de procesamiento')
                             ->visible(fn (Forms\Get $get) => $get('status') === 'processed')
-                            ->default(now()),
+                            ->default(now())
+                            ->disabled(),
                     ])
                     ->columns(3),
             ]);
@@ -124,9 +144,7 @@ class EmailRequestResource extends Resource
                     ->sortable()
                     ->searchable(),
                     
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Curso/Producto')
-                    ->sortable(),
+                // Curso/Producto column removed
                     
                 Tables\Columns\TextColumn::make('email_to')
                     ->label('Email')
@@ -135,10 +153,7 @@ class EmailRequestResource extends Resource
                     ->copyMessage('Email copiado al portapapeles')
                     ->copyMessageDuration(1500),
                     
-                Tables\Columns\TextColumn::make('contact_person')
-                    ->label('Contacto')
-                    ->searchable()
-                    ->toggleable(),
+                // Contact person column removed
                     
                 Tables\Columns\TextColumn::make('requestedBy.name')
                     ->label('Solicitado por')
@@ -165,11 +180,7 @@ class EmailRequestResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
                     
-                Tables\Columns\TextColumn::make('processed_at')
-                    ->label('Fecha de procesamiento')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(),
+                // Processed date column removed
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -203,88 +214,18 @@ class EmailRequestResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Only include process and cancel actions for admins reviewing pending requests
+                Tables\Actions\Action::make('view')
+                    ->label('Ver detalles')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (EmailRequest $record): string => route('filament.dashboard.resources.email-requests.view', $record)),
                 
-                Tables\Actions\Action::make('process')
-                    ->label('Procesar')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (EmailRequest $record) => $record->status === 'pending')
-                    ->form([
-                        Forms\Components\Textarea::make('admin_notes')
-                            ->label('Notas del administrador')
-                            ->helperText('Añade notas sobre el email enviado. Estas notas serán visibles para el operador.')
-                            ->placeholder('Ej: Email enviado con información del curso. Cliente interesado en modalidad online.')
-                            ->maxLength(65535)
-                            ->required(),
-                    ])
-                    ->action(function (EmailRequest $record, array $data): void {
-                        // Usar el método del modelo para marcar como procesado
-                        $record->markAsProcessed(auth()->id(), $data['admin_notes']);
-                        
-                        // Notificar al operador que solicitó el email
-                        $requestedBy = $record->requestedBy;
-                        if ($requestedBy) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('✅ Email procesado')
-                                ->body('El administrador ha enviado el email solicitado para ' . $record->company->name)
-                                ->actions([
-                                    \Filament\Notifications\Actions\Action::make('view')
-                                        ->label('Ver detalles')
-                                        ->url(route('filament.admin.resources.email-requests.edit', $record))
-                                ])
-                                ->sendToDatabase($requestedBy);
-                        }
-                        
-                        // Mostrar notificación toast
-                        \Filament\Notifications\Notification::make()
-                            ->title('✅ Solicitud procesada correctamente')
-                            ->body('Se ha marcado como procesada la solicitud de email para ' . $record->company->name)
-                            ->success()
-                            ->send();
-                    }),
+                // Process action removed - processing happens on edit form
                     
-                Tables\Actions\Action::make('cancel')
-                    ->label('Cancelar')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (EmailRequest $record) => $record->status === 'pending')
-                    ->form([
-                        Forms\Components\Textarea::make('admin_notes')
-                            ->label('Motivo de cancelación')
-                            ->helperText('Indica el motivo por el que se cancela esta solicitud')
-                            ->placeholder('Ej: Datos incorrectos, solicitud duplicada, etc.')
-                            ->required(),
-                    ])
-                    ->requiresConfirmation()
-                    ->modalHeading('Cancelar solicitud de email')
-                    ->modalDescription('¿Estás seguro de que deseas cancelar esta solicitud? Esta acción no se puede deshacer.')
-                    ->modalSubmitActionLabel('Sí, cancelar solicitud')
-                    ->action(function (EmailRequest $record, array $data): void {
-                        // Usar el método del modelo para marcar como cancelado
-                        $record->markAsCancelled(auth()->id(), $data['admin_notes']);
-                        
-                        // Notificar al operador que solicitó el email
-                        $requestedBy = $record->requestedBy;
-                        if ($requestedBy) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('❌ Solicitud de email cancelada')
-                                ->body('Tu solicitud de email para ' . $record->company->name . ' ha sido cancelada: ' . ($data['admin_notes'] ?? 'Sin motivo especificado'))
-                                ->sendToDatabase($requestedBy);
-                        }
-                        
-                        // Mostrar notificación toast
-                        \Filament\Notifications\Notification::make()
-                            ->title('Solicitud cancelada')
-                            ->body('Se ha cancelado la solicitud de email')
-                            ->warning()
-                            ->send();
-                    }),
+                // Cancel action removed
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Bulk actions removed
             ]);
     }
 
@@ -300,6 +241,7 @@ class EmailRequestResource extends Resource
         return [
             'index' => Pages\ListEmailRequests::route('/'),
             'create' => Pages\CreateEmailRequest::route('/create'),
+            'view' => Pages\ViewEmailRequest::route('/{record}/view'),
             'edit' => Pages\EditEmailRequest::route('/{record}/edit'),
         ];
     }

@@ -13,7 +13,7 @@ class ListEmailRequests extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Create action removed - operators should create email requests from company page
         ];
     }
 }
