@@ -102,11 +102,7 @@ class CallResource extends Resource
                     
                 TextColumn::make('call_time')
                     ->label('Hora')
-                    ->formatStateUsing(fn($state, $record) => $state
-                        ? substr($state, 0, 5)
-                        : ($record->call_date
-                            ? date('H:i', strtotime($record->call_date))
-                            : '-'))
+                    ->time('H:i')
                     ->sortable(),
                     
                 TextColumn::make('duration')
