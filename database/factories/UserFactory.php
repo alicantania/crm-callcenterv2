@@ -21,7 +21,7 @@ class UserFactory extends Factory
             'address' => $this->faker->address(),
             'birth_date' => $this->faker->date(),
             'identification_number' => $this->faker->dni(),
-            'password' => bcrypt('1234'),
+            'password' => bcrypt('password'),
             'extension' => $this->faker->numberBetween(1000, 9999),
             'contract_start_date' => now()->subYear(),
             'contract_end_date' => null,

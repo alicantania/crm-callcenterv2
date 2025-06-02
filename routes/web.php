@@ -9,9 +9,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// Route::view('dashboard', 'dashboard')
-//     ->middleware(['auth', 'verified'])
-//     ->name('dashboard');
+// Dashboard (ruta stub para tests)
+Route::get('dashboard', function () {
+    return '';
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
