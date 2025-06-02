@@ -6,9 +6,5 @@
         <x-filament::button color="danger" wire:click="resetear">
             ✅ Liberar empresas
         </x-filament::button>
-
-        <x-filament::button color="primary" wire:click="lanzarTestNotification">
-            🔔 Probar notificación persistente (Laravel pura)
-        </x-filament::button>
     </div>
 </div>

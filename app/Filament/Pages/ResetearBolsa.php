@@ -14,7 +14,7 @@ class ResetearBolsa extends Page
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
     protected static string $view = 'filament.pages.resetear-bolsa';
     protected static ?string $navigationLabel = 'Resetear Bolsa de Llamadas';
-    protected static ?string $navigationGroup = 'Gerencia';
+    //protected static ?string $navigationGroup = 'Gerencia';
     protected static ?int $navigationSort = 50;
 
     public static function shouldRegisterNavigation(): bool

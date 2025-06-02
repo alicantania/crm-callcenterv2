@@ -3,8 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmailRequestResource\Pages;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\EmailRequestResource\RelationManagers;
 use App\Models\EmailRequest;
+use App\Helpers\RoleHelper;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -29,13 +31,14 @@ class EmailRequestResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();
-        if (method_exists($user, 'hasRole') && $user->hasRole('operator')) {
-            // Badge shows processed requests for the operator
+        if (RoleHelper::userHasRole(['Operador'])) {
+            // Mostrar badge solo de solicitudes procesadas y no vistas por este operador
             $count = static::$model::where('status', 'processed')
                 ->where('requested_by_id', $user->id)
+                ->where('operator_seen', false)
                 ->count();
         } else {
-            // Admin badge shows pending requests
+            // Admin badge muestra solicitudes pendientes
             $count = static::$model::where('status', 'pending')->count();
         }
         return $count > 0 ? (string) $count : null;
@@ -135,6 +138,21 @@ class EmailRequestResource extends Resource
             ]);
     }
 
+    /**
+     * Filtra las solicitudes para que los operadores solo vean las suyas
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // Si es un operador, solo mostrar sus solicitudes
+        if (auth()->user() && auth()->user()->role->name === 'Operador') {
+            $query->where('requested_by_id', auth()->id());
+        }
+        
+        return $query;
+    }
+    
     public static function table(Table $table): Table
     {
         return $table
@@ -214,15 +232,15 @@ class EmailRequestResource extends Resource
                     }),
             ])
             ->actions([
-                // Only include process and cancel actions for admins reviewing pending requests
+                // Operator sees only the view details action
                 Tables\Actions\Action::make('view')
+                    ->visible(fn (EmailRequest $record): bool => auth()->user()?->hasRole('operator'))
                     ->label('Ver detalles')
                     ->icon('heroicon-o-eye')
                     ->url(fn (EmailRequest $record): string => route('filament.dashboard.resources.email-requests.view', $record)),
-                
-                // Process action removed - processing happens on edit form
-                    
-                // Cancel action removed
+                // Admin, Gerencia y Superadmin can edit (process) requests
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (EmailRequest $record): bool => ! auth()->user()?->hasRole('operator')),
             ])
             ->bulkActions([
                 // Bulk actions removed
@@ -244,5 +262,23 @@ class EmailRequestResource extends Resource
             'view' => Pages\ViewEmailRequest::route('/{record}/view'),
             'edit' => Pages\EditEmailRequest::route('/{record}/edit'),
         ];
+    }
+    
+    /**
+     * Determine if the current user can edit the given resource.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        // Only admin, gerencia and superadmin can edit (not operators)
+        return RoleHelper::userHasNotRole(['Operador']);
+    }
+    
+    /**
+     * Determine if the current user can view the given resource.
+     */
+    public static function canView(Model $record): bool
+    {
+        // All users can view (mainly for operators)
+        return true;
     }
 }
