@@ -20,7 +20,7 @@ class SaleSeeder extends Seeder
             return; // Si no hay datos, no hacer nada
         }
 
-        foreach (range(1, 400) as $i) {
+        foreach (range(1, 1400) as $i) {
             $product = $productos->random();
             $productId = $product->id;
 
@@ -70,9 +70,15 @@ class SaleSeeder extends Seeder
                 'ss_student' => fake()->bothify('SS-#####'),
 
                 'status' => fake()->randomElement([
-                    'pendiente', 'tramitada', 'seguimiento', 'devuelta', 'incidentada', 'anulada', 'liquidada',
+                    'pendiente', 'tramitada', 'incidentada', 'anulada',
                 ]),
+                'tramitated_at' => null,
             ]);
         }
+
+        // Actualizar solo las ventas tramitadas
+        Sale::where('status', 'tramitada')->update([
+            'tramitated_at' => now()->subDays(rand(1, 30))->format('d-m-Y')
+        ]);
     }
 }

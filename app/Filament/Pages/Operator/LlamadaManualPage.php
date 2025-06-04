@@ -21,6 +21,7 @@ use App\Enums\CompanyStatus;
 use Filament\Actions\Action;
 use Livewire\Attributes\On;
 use App\Filament\Resources\CompanyResource;
+use Carbon\Carbon;
 
 class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 {
@@ -896,77 +897,40 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                         ->send();
                     return;
                 }
-                $fechaRe = is_string($data['fecha_rellamada'])
-                    ? $data['fecha_rellamada']
-                    : $data['fecha_rellamada']->format('Y-m-d H:i:s');
-
-                // La empresa pasa a “seguimiento” y se desbloquea
+                
+                // Actualizar empresa con fecha de seguimiento
+                $fechaSeguimiento = Carbon::parse($data['fecha_rellamada'])->format('Y-m-d H:i:s');
                 $this->empresa->update([
-                    'status'               => 'seguimiento',
-                    'assigned_operator_id' => Auth::id(),
-                    'locked_to_operator'   => false,
-                    'follow_up_date'       => $fechaRe,
-                    'follow_up_notes'      => $data['comentarios'] ?? 'Volver a llamar según lo acordado.',
+                    'follow_up_date' => $fechaSeguimiento,
+                    'status' => CompanyStatus::Seguimiento->value
                 ]);
-
+                
+                // Actualizar la propiedad local sin refrescar todo el modelo
+                $this->empresa->follow_up_date = $fechaSeguimiento;
+                
                 Notification::make()
-                    ->title('✅ Empresa en seguimiento')
-                    ->body('Se ha guardado en “Mis Contactos” para llamar el ' .
-                           (is_string($data['fecha_rellamada'])
-                               ? $data['fecha_rellamada']
-                               : $data['fecha_rellamada']->format('d/m/Y H:i')) .
-                           '.')
+                    ->title('✅ Fecha de seguimiento actualizada')
+                    ->body('Nueva fecha: ' . Carbon::parse($data['fecha_rellamada'])->format('d-m-Y H:i'))
                     ->success()
                     ->send();
-
-                // Liberar y cargar siguiente
-                $this->empresa_id = null;
-                $this->empresa    = null;
-                session()->forget('operador_empresa_id');
-                Notification::make()
-                    ->title('🕐 Cargando siguiente empresa…')
-                    ->info()
-                    ->send();
-                $this->getNextEmpresa();
-                return;
-
+                break;
+                
             case 'contacto':
-                $updates = [
-                    'status'               => 'contactada',
-                    'assigned_operator_id' => Auth::id(),
-                    'locked_to_operator'   => false,
-                ];
-                if (! empty($data['fecha_rellamada'])) {
-                    $fechaRe = is_string($data['fecha_rellamada'])
-                        ? $data['fecha_rellamada']
-                        : $data['fecha_rellamada']->format('Y-m-d H:i:s');
-                    $updates['follow_up_date']  = $fechaRe;
-                    $updates['follow_up_notes'] = $data['comentarios'] ?? 'Seguimiento de contacto realizado.';
-                }
-                $this->empresa->update($updates);
-
+                $fechaSeguimiento = now()->addDay()->format('Y-m-d H:i:s');
+                $this->empresa->update([
+                    'follow_up_date' => $fechaSeguimiento,
+                    'status' => CompanyStatus::Seguimiento->value
+                ]);
+                
+                // Actualizar la propiedad local sin refrescar todo el modelo
+                $this->empresa->follow_up_date = $fechaSeguimiento;
+                
                 Notification::make()
-                    ->title('✅ Contacto registrado')
-                    ->body('Se ha guardado en “Mis Contactos” con estado Contactada' .
-                           (! empty($data['fecha_rellamada'])
-                               ? ' y seguimiento para ' . (is_string($data['fecha_rellamada'])
-                                   ? $data['fecha_rellamada']
-                                   : $data['fecha_rellamada']->format('d/m/Y H:i'))
-                               : '') .
-                           '.')
+                    ->title('✅ Fecha de seguimiento establecida')
+                    ->body('Nueva fecha: ' . now()->addDay()->format('d-m-Y H:i'))
                     ->success()
                     ->send();
-
-                // Liberar y cargar siguiente
-                $this->empresa_id = null;
-                $this->empresa    = null;
-                session()->forget('operador_empresa_id');
-                Notification::make()
-                    ->title('🕐 Cargando siguiente empresa…')
-                    ->info()
-                    ->send();
-                $this->getNextEmpresa();
-                return;
+                break;
 
             case 'error':
                 $this->empresa->update([

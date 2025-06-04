@@ -71,7 +71,10 @@ class VentasPendientesDeTramitar extends Page implements HasTable
             ->columns([
                 TextColumn::make('company_name')->label('Empresa')->searchable()->sortable(),
                 TextColumn::make('cif')->label('CIF')->searchable(),
-                TextColumn::make('sale_date')->label('Fecha de venta')->date()->sortable(),
+                TextColumn::make('sale_date')
+                    ->label('Fecha de venta')
+                    ->date('d-m-Y')
+                    ->sortable(),
                 TextColumn::make('operator.name')
                     ->label('Operador')
                     ->searchable()

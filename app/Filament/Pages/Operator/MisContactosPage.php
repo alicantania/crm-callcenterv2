@@ -15,6 +15,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Resources\CompanyResource;
 use App\Enums\CompanyStatus;
+use Carbon\Carbon;
 
 class MisContactosPage extends Page implements HasTable
 {
@@ -73,12 +74,14 @@ class MisContactosPage extends Page implements HasTable
 
                 Tables\Columns\TextColumn::make('follow_up_date')
                     ->label('Fecha seguimiento')
-                    ->date()
-                    ->sortable(),
+                    ->date('d-m-Y H:i')
+                    ->sortable()
+                    ->placeholder('Sin fecha'),
                     
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Última actualización')
                     ->dateTime()
+                    ->date('d-m-Y')
                     ->sortable(),
             ])
             ->filters([
@@ -92,9 +95,11 @@ class MisContactosPage extends Page implements HasTable
                     ->label('Fecha de seguimiento')
                     ->form([
                         Forms\Components\DatePicker::make('follow_up_from')
-                            ->label('Desde'),
+                            ->label('Desde')
+                            ->displayFormat('d-m-Y'),
                         Forms\Components\DatePicker::make('follow_up_until')
-                            ->label('Hasta'),
+                            ->label('Hasta')
+                            ->displayFormat('d-m-Y'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

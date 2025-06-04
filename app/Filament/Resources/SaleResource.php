@@ -180,10 +180,12 @@ class SaleResource extends Resource
                             ->dehydrated()
                             ->default(fn (?Sale $record) => $record?->commission_amount),
 
-                        DatePicker::make('sale_date')
-                            ->label('Fecha venta')
+                        Forms\Components\DatePicker::make('sale_date')
+                            ->label('Fecha de venta')
                             ->default(now())
-                            ->required(),
+                            ->required()
+                            ->displayFormat('d-m-Y')
+                            ->native(false),
 
                         Select::make('operator_id')
                             ->label('Operador que hizo la venta')

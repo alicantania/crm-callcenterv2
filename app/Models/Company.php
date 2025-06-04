@@ -25,6 +25,7 @@ class Company extends Model
         'contact_person',
         'contacts_count',
         'last_contact_at',
+        'follow_up_date',
         'status',
         'locked_to_operator',
         'locked_at',
@@ -33,6 +34,12 @@ class Company extends Model
         'fecha_interes',
         'observaciones_interes',
         'internal_note',
+    ];
+
+    protected $casts = [
+        'last_contact_at' => 'datetime',
+        'follow_up_date' => 'datetime',
+        'locked_at' => 'datetime',
     ];
 
     // Relación con el operador asignado

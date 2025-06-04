@@ -68,7 +68,7 @@ class SeguimientoDeVentas extends Page implements HasTable
             ->columns([
                 TextColumn::make('company_name')->label('Empresa')->searchable()->sortable(),
                 TextColumn::make('product.name')->label('Curso')->searchable()->sortable(),
-                TextColumn::make('sale_date')->date()->label('Fecha venta')->searchable()->sortable(),
+                TextColumn::make('sale_date')->date('d-m-Y')->label('Fecha venta')->searchable()->sortable(),
                 TextColumn::make('status')->label('Estado')->badge()->searchable()->sortable(),
                 TextColumn::make('tramitator.name')->label('Tramitador')->searchable()->sortable(),
                 TextColumn::make('tramitated_at')->label('Tramitada el')->date()->searchable()->sortable(),

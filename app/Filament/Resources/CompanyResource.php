@@ -134,6 +134,8 @@ class CompanyResource extends Resource
                                 
                             Forms\Components\DateTimePicker::make('last_contact_at')
                                 ->label('Último contacto')
+                                ->displayFormat('d-m-Y H:i')
+                                ->native(false)
                                 ->disabled()
                                 ->nullable(),
                                 

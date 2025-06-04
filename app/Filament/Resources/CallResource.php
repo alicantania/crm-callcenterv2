@@ -53,7 +53,9 @@ class CallResource extends Resource
 
                 Forms\Components\DatePicker::make('call_date')
                     ->label('Fecha de llamada')
-                    ->required(),
+                    ->required()
+                    ->displayFormat('d-m-Y')
+                    ->native(false),
 
                 Forms\Components\TimePicker::make('call_time')
                     ->label('Hora de llamada')
