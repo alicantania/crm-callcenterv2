@@ -7,7 +7,13 @@ use Faker\Generator;
 use Faker\Factory as FakerFactory;
 use Faker\Provider\Base;
 use App\Models\Sale;
+use App\Models\Call;
+use App\Models\User;
+use App\Models\Company;
 use App\Observers\SaleObserver;
+use App\Observers\CallObserver;
+use App\Observers\UserObserver;
+use App\Observers\CompanyObserver;
 use Illuminate\Support\Facades\Blade;
 use Filament\Notifications\Livewire\NotificationsComponent;
 use Livewire\Livewire;
@@ -50,5 +56,11 @@ class AppServiceProvider extends ServiceProvider
         // Registra manualmente el componente de notificaciones de Filament
         //Blade::component('filament-notifications::components.notifications', 'filament-notifications::notifications');
         //Livewire::component('filament.notifications.notifications', CustomNotificationsComponent::class);
+        
+        // Registrar observers para el sistema de logs
+        Sale::observe(SaleObserver::class);
+        Call::observe(CallObserver::class);
+        User::observe(UserObserver::class);
+        Company::observe(CompanyObserver::class);
     }
 }

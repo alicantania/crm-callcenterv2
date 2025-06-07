@@ -63,6 +63,10 @@ class DashboardPanelProvider extends PanelProvider
                 //Widgets\FilamentInfoWidget::class,
                 \App\Filament\Widgets\DashboardGlobal::class,
                 \App\Filament\Widgets\GerenciaComparativasWidget::class,
+                \App\Filament\Widgets\Superadmin\ActivityLogWidget::class,
+                \App\Filament\Widgets\Superadmin\LoginHistoryWidget::class,
+                \App\Filament\Widgets\Superadmin\SecurityStatsWidget::class,
+                \App\Filament\Widgets\Superadmin\OperatorActivityWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

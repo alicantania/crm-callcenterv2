@@ -7,6 +7,10 @@ use App\Filament\Widgets\Superadmin\KpiWidget;
 use App\Filament\Widgets\Superadmin\CallsChartWidget;
 use App\Filament\Widgets\Superadmin\SalesChartWidget;
 use App\Filament\Widgets\Superadmin\CommissionChartWidget;
+use App\Filament\Widgets\Superadmin\ActivityLogWidget;
+use App\Filament\Widgets\Superadmin\LoginHistoryWidget;
+use App\Filament\Widgets\Superadmin\SecurityStatsOverviewWidget;
+use App\Filament\Widgets\Superadmin\OperatorActivityWidget;
 
 class SuperadminDashboard extends Page
 {
@@ -16,6 +20,7 @@ class SuperadminDashboard extends Page
     protected static ?string $slug = 'superadmin-dashboard';
     protected static ?string $navigationGroup = 'Superadmin';
 
+    // Volvemos a usar la vista personalizada pero modificaremos su contenido
     protected static string $view = 'filament.pages.superadmin-dashboard';
     
     /**
@@ -33,9 +38,13 @@ class SuperadminDashboard extends Page
     {
         return [
             KpiWidget::class,
+            SecurityStatsOverviewWidget::class,
             CallsChartWidget::class,
             SalesChartWidget::class,
             CommissionChartWidget::class,
+            OperatorActivityWidget::class,
+            LoginHistoryWidget::class,
+            ActivityLogWidget::class,
         ];
     }
     
