@@ -70,7 +70,7 @@ class SaleSeeder extends Seeder
                 'ss_student' => fake()->bothify('SS-#####'),
 
                 'status' => fake()->randomElement([
-                    'pendiente', 'tramitada', 'incidentada', 'anulada',
+                    'tramitada', 'incidentada', 'anulada',
                 ]),
                 'tramitated_at' => null,
             ]);

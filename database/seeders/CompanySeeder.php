@@ -15,8 +15,8 @@ class CompanySeeder extends Seeder
      */
     public function run(): void
     {
-        // Crear 500 empresas completamente libres de operador
-        Company::factory(500)->create()->each(function ($empresa) {
+        // Crear 1500 empresas completamente libres de operador
+        Company::factory(1500)->create()->each(function ($empresa) {
             $empresa->updateQuietly([
                 'assigned_operator_id' => null,
                 'status' => 'nueva',

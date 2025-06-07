@@ -21,7 +21,7 @@ class CallSeeder extends Seeder
             return;
         }
 
-        foreach (range(1, 800) as $i) {
+        foreach (range(1, 1800) as $i) {
             Call::create([
                 'company_id' => $faker->randomElement($empresas),
                 'user_id' => $faker->randomElement($operadores),
