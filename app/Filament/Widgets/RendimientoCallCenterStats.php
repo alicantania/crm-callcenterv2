@@ -43,10 +43,10 @@ class RendimientoCallCenterStats extends BaseWidget
         }
         
         // Total de llamadas
-        $totalLlamadas = Call::where('created_at', '>=', $fechaInicio)->count();
+        $totalLlamadas = Call::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))->count();
         
         // Llamadas efectivas
-        $llamadasEfectivas = Call::where('created_at', '>=', $fechaInicio)
+        $llamadasEfectivas = Call::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))
             ->where('status', 'efectiva')
             ->count();
         
@@ -56,7 +56,7 @@ class RendimientoCallCenterStats extends BaseWidget
             : 0;
         
         // Duración promedio de llamadas
-        $duracionPromedio = Call::where('created_at', '>=', $fechaInicio)
+        $duracionPromedio = Call::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))
             ->whereNotNull('duration')
             ->avg('duration');
             
@@ -64,10 +64,10 @@ class RendimientoCallCenterStats extends BaseWidget
         $duracionPromedio = round($duracionPromedio / 60, 2);
         
         // Ventas generadas
-        $ventasGeneradas = Sale::where('created_at', '>=', $fechaInicio)->count();
+        $ventasGeneradas = Sale::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))->count();
         
         // Importe total de ventas
-        $importeVentas = Sale::where('created_at', '>=', $fechaInicio)
+        $importeVentas = Sale::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))
             ->where(function($query) {
                 $query->where('status', 'tramitada')
                       ->orWhere('status', 'completada')
@@ -76,7 +76,7 @@ class RendimientoCallCenterStats extends BaseWidget
             ->sum('sale_price');
         
         // Importe de ventas anuladas (resta)
-        $importeVentasAnuladas = Sale::where('created_at', '>=', $fechaInicio)
+        $importeVentasAnuladas = Sale::where('created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))
             ->where(function($query) {
                 $query->where('status', 'anulada')
                       ->orWhere('status', 'cancelada');
@@ -86,20 +86,25 @@ class RendimientoCallCenterStats extends BaseWidget
         // Importe neto (ventas tramitadas - anuladas)
         $importeNeto = $importeVentas - $importeVentasAnuladas;
         
-        // Operador más eficiente
-        $operadorEficiente = DB::table('calls')
-            ->select([
-                'users.name as nombre',
-                DB::raw('COUNT(calls.id) as total_llamadas'),
-                DB::raw('SUM(CASE WHEN calls.status = \'efectiva\' THEN 1 ELSE 0 END) as llamadas_efectivas'),
-                DB::raw('ROUND((SUM(CASE WHEN calls.status = \'efectiva\' THEN 1 ELSE 0 END) / NULLIF(COUNT(calls.id), 0)) * 100, 2) as tasa_conversion')
-            ])
-            ->join('users', 'calls.user_id', '=', 'users.id')
-            ->where('calls.created_at', '>=', $fechaInicio)
-            ->groupBy('users.id', 'users.name')
-            ->having('total_llamadas', '>', 10) // Mínimo 10 llamadas para considerar
-            ->orderBy('tasa_conversion', 'desc')
-            ->first();
+        try {
+            // Operador más eficiente
+            $operadorEficiente = DB::table('calls')
+                ->select([
+                    'users.name as nombre',
+                    DB::raw('COUNT(calls.id) as total_llamadas'),
+                    DB::raw('SUM(CASE WHEN calls.status = \'efectiva\' THEN 1 ELSE 0 END) as llamadas_efectivas'),
+                    DB::raw('ROUND((SUM(CASE WHEN calls.status = \'efectiva\' THEN 1 ELSE 0 END) / NULLIF(COUNT(calls.id), 0)) * 100, 2) as tasa_conversion')
+                ])
+                ->join('users', 'calls.user_id', '=', 'users.id')
+                ->where('calls.created_at', '>=', $fechaInicio->format('Y-m-d H:i:s'))
+                ->groupBy('users.id', 'users.name')
+                ->havingRaw('COUNT(calls.id) > 10') // Mínimo 10 llamadas para considerar
+                ->orderBy('tasa_conversion', 'desc')
+                ->first();
+        } catch (\Exception $e) {
+            // Si hay un error, simplemente establecemos el operador como null
+            $operadorEficiente = null;
+        }
         
         return [
             Stat::make('Total Llamadas', $totalLlamadas)
