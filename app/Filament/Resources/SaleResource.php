@@ -169,7 +169,7 @@ class SaleResource extends Resource
                             ->label('Línea de negocio')
                             ->relationship('businessLine', 'name')
                             ->required()
-                            ->disabled() // 👈 evita que el usuario lo modifique manualmente
+                            ->disabled() // 
                             ->reactive(),
 
                         TextInput::make('commission_amount')
@@ -205,8 +205,8 @@ class SaleResource extends Resource
                 $query = Sale::query()
                     ->with(['product', 'businessLine', 'operator']);
 
-                // Si es operador, solo ve sus ventas
-                if (RoleHelper::userHasRole(['Operador'])) {
+                // Solo operadores ven solo sus ventas
+                if (RoleHelper::userHasRole(['Operador']) && !RoleHelper::userHasRole(['Superadmin', 'Gerencia', 'Administrador'])) {
                     $query->where('operator_id', Auth::id());
                 }
 
@@ -234,7 +234,7 @@ class SaleResource extends Resource
                 ]),
             ])
             ->filters([])
-            ->defaultSort('sale_date', 'desc') // ← ORDENA POR FECHA MÁS RECIENTE PRIMERO
+            ->defaultSort('sale_date', 'desc') // ORDENA POR FECHA MÁS RECIENTE PRIMERO
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->url(fn ($record) => static::getUrl('view', ['record' => $record->id]))
@@ -242,9 +242,9 @@ class SaleResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->color('info'),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn ($record) => !RoleHelper::userHasRole(['Operador'])),
+                    ->visible(fn ($record) => RoleHelper::userHasRole(['Administrador', 'Gerencia', 'Superadmin'])),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => !RoleHelper::userHasRole(['Operador'])), // Solo gerencia puede eliminar
+                    ->visible(fn () => RoleHelper::userHasRole(['Gerencia', 'Superadmin'])),
                 Tables\Actions\Action::make('corregir')
                     ->label('Corregir venta')
                     ->icon('heroicon-m-pencil-square')
@@ -258,7 +258,7 @@ class SaleResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => !RoleHelper::userHasRole(['Operador'])), // Solo visible para gerencia
+                        ->visible(fn () => RoleHelper::userHasRole(['Gerencia', 'Superadmin'])), // Solo visible para gerencia
                 ]),
             ]);
             
@@ -281,7 +281,7 @@ class SaleResource extends Resource
         }
         
         // Admins y gerencia ven total de ventas
-        if (RoleHelper::userHasRole(['Administrador', 'Gerencia'])) {
+        if (RoleHelper::userHasRole(['Administrador', 'Gerencia', 'Superadmin'])) {
             $count = static::getModel()::count(); 
             return $count > 0 ? (string) $count : null;
         }
