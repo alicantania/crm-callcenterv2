@@ -9,6 +9,11 @@ class CallsChartWidget extends Widget
 {
     protected static string $view = 'filament.widgets.superadmin.calls-chart-widget';
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 5;
+    }
+
     public $period = 'week';
 
     public function getViewData(): array

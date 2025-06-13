@@ -69,8 +69,27 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                     ->where('user_id', Auth::id())
                     ->whereDate('call_date', now()->toDateString())
                     ->exists();
-
-                if (! $hayVenta && ! $hayLlamadaHoy) {
+                
+                // Verificar si hay una llamada marcada como venta_realizada
+                $hayLlamadaVenta = $this->empresa->calls()
+                    ->where('user_id', Auth::id())
+                    ->where('status', CallStatus::VentaRealizada->value)
+                    ->whereDate('call_date', now()->toDateString())
+                    ->exists();
+                
+                // Si ya hay una venta o una llamada marcada como venta_realizada, buscar otra empresa
+                if ($hayVenta || $hayLlamadaVenta) {
+                    // Limpiar sesión y propiedades
+                    session()->forget('operador_empresa_id');
+                    $this->empresa_id = null;
+                    $this->empresa = null;
+                    
+                    // Buscar una nueva empresa
+                    $this->getNextEmpresa();
+                    return;
+                }
+                
+                if (! $hayVenta && ! $hayLlamadaHoy && ! $hayLlamadaVenta) {
                     Notification::make()
                         ->title('⚠️ Acción requerida')
                         ->body('Debes registrar el resultado de la llamada para ' . $this->empresa->name . ' o crear una venta antes de pasar a otra empresa.')
@@ -91,7 +110,26 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
         if ($this->empresa_id) {
             $empresaLivewire = Company::find($this->empresa_id);
             if ($empresaLivewire) {
-                $this->empresa    = $empresaLivewire;
+                // Verificar si ya tiene una venta o una llamada marcada como venta_realizada
+                $hayVenta = Sale::where('company_id', $empresaLivewire->id)->exists();
+                $hayLlamadaVenta = $empresaLivewire->calls()
+                    ->where('user_id', Auth::id())
+                    ->where('status', CallStatus::VentaRealizada->value)
+                    ->whereDate('call_date', now()->toDateString())
+                    ->exists();
+                
+                // Si ya hay una venta o una llamada marcada como venta_realizada, buscar otra empresa
+                if ($hayVenta || $hayLlamadaVenta) {
+                    // Limpiar propiedades
+                    $this->empresa_id = null;
+                    $this->empresa = null;
+                    
+                    // Buscar una nueva empresa
+                    $this->getNextEmpresa();
+                    return;
+                }
+                
+                $this->empresa = $empresaLivewire;
                 session(['operador_empresa_id' => $this->empresa_id]);
                 $this->fillForm();
                 return;
@@ -103,6 +141,25 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
         if ($empresa_id_request) {
             $empresaSolicitada = Company::find($empresa_id_request);
             if ($empresaSolicitada) {
+                // Verificar si ya tiene una venta o una llamada marcada como venta_realizada
+                $hayVenta = Sale::where('company_id', $empresaSolicitada->id)->exists();
+                $hayLlamadaVenta = $empresaSolicitada->calls()
+                    ->where('user_id', Auth::id())
+                    ->where('status', CallStatus::VentaRealizada->value)
+                    ->whereDate('call_date', now()->toDateString())
+                    ->exists();
+                
+                // Si ya hay una venta o una llamada marcada como venta_realizada, buscar otra empresa
+                if ($hayVenta || $hayLlamadaVenta) {
+                    // Limpiar propiedades
+                    $this->empresa_id = null;
+                    $this->empresa = null;
+                    
+                    // Buscar una nueva empresa
+                    $this->getNextEmpresa();
+                    return;
+                }
+                
                 $this->empresa    = $empresaSolicitada;
                 $this->empresa_id = $empresaSolicitada->id;
                 session(['operador_empresa_id' => $empresaSolicitada->id]);
@@ -151,6 +208,13 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
                 $hayVenta      = Sale::where('company_id', $empresaSesion->id)->exists();
                 $hayLlamadaHoy = $empresaSesion->calls()
                     ->where('user_id', Auth::id())
+                    ->whereDate('call_date', now()->toDateString())
+                    ->exists();
+                
+                // Verificar si hay una llamada marcada como venta_realizada
+                $hayLlamadaVenta = $empresaSesion->calls()
+                    ->where('user_id', Auth::id())
+                    ->where('status', CallStatus::VentaRealizada->value)
                     ->whereDate('call_date', now()->toDateString())
                     ->exists();
 
@@ -366,9 +430,24 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
             'locked_to_operator' => true,
         ]);
 
+        // Guardar el ID de la empresa para la redirección
+        $empresaId = $this->empresa->id;
+        
+        // Limpiar la sesión y las propiedades de Livewire
+        session()->forget('operador_empresa_id');
+        $this->empresa_id = null;
+        $this->empresa = null;
+        
+        // Buscar la siguiente empresa disponible para tenerla lista cuando vuelva
+        $siguienteEmpresa = $this->getNextEmpresa();
+        if ($siguienteEmpresa) {
+            // Guardar en sesión para que esté disponible al volver
+            session(['operador_empresa_id' => $siguienteEmpresa->id]);
+        }
+        
         // Generar URL de creación de venta
         $saleCreateUrl = \App\Filament\Resources\SaleResource::getUrl('create', [
-            'company_id' => $this->empresa->id,
+            'company_id' => $empresaId,
         ]);
 
         Notification::make()
@@ -788,8 +867,18 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
 
         $data = $this->formData;
 
-        // Validar que se haya seleccionado un resultado
-        if (empty($data['resultado'])) {
+        // Verificar si ya existe una venta para esta empresa
+        $hayVenta = Sale::where('company_id', $this->empresa->id)->exists();
+        
+        // Verificar si hay una llamada marcada como venta_realizada
+        $hayLlamadaVenta = $this->empresa->calls()
+            ->where('user_id', Auth::id())
+            ->where('status', CallStatus::VentaRealizada->value)
+            ->whereDate('call_date', now()->toDateString())
+            ->exists();
+            
+        // Validar que se haya seleccionado un resultado (solo si no hay venta ni llamada de venta)
+        if (empty($data['resultado']) && !$hayVenta && !$hayLlamadaVenta) {
             Notification::make()
                 ->title('⚠️ Debes seleccionar un resultado de llamada')
                 ->warning()

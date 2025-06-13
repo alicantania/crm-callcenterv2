@@ -1,4 +1,4 @@
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+<!-- <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
     <h3 class="text-lg font-semibold mb-4">Comparativa de Ventas por Operador</h3>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
@@ -38,4 +38,4 @@
             </tbody>
         </table>
     </div>
-</div>
+</div> -->

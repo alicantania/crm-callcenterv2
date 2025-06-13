@@ -14,6 +14,15 @@ class RendimientoCallCenterStats extends BaseWidget
 {
     protected static ?string $pollingInterval = '60s';
     
+    /**
+     * Determina si el widget puede ser visto por el usuario actual.
+     * Solo visible para superadmins (role_id = 4)
+     */
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 4;
+    }
+    
     protected function getStats(): array
     {
         // Obtener el período seleccionado (por defecto último mes)

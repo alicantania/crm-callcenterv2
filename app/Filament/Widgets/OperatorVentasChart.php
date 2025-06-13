@@ -10,6 +10,10 @@ class OperatorVentasChart extends ChartWidget
 {
     protected static ?string $heading = '📈 Ventas últimos 30 días';
     protected static ?string $maxHeight = '300px';
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 5;
+    }
 
     protected function getData(): array
     {

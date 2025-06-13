@@ -12,6 +12,15 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class DashboardGlobal extends BaseWidget
 {
     protected static ?string $pollingInterval = null; // no auto-refresh
+    
+    /**
+     * Determina si el widget puede ser visto por el usuario actual.
+     * Solo visible para superadmins (role_id = 4)
+     */
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 1 || auth()->user()->role_id === 2 || auth()->user()->role_id === 3 || auth()->user()->role_id === 4;
+    }
 
     protected function getStats(): array
     {

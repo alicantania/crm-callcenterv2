@@ -17,6 +17,15 @@ class OperatorActivityWidget extends BaseWidget
 {
     protected static ?int $sort = 3;
     protected int|string|array $columnSpan = 'full';
+    
+    /**
+     * Determina si el widget puede ser visto por el usuario actual.
+     * Solo visible para superadmins (role_id = 4)
+     */
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 4;
+    }
 
     public function table(Table $table): Table
     {

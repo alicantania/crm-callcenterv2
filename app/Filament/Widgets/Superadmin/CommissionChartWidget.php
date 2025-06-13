@@ -9,6 +9,11 @@ class CommissionChartWidget extends Widget
 {
     protected static string $view = 'filament.widgets.superadmin.commission-chart-widget';
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 5;
+    }
+
     public function getViewData(): array
     {
         $labels = User::where('role_id', 1)->pluck('name');

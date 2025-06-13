@@ -11,6 +11,15 @@ use Illuminate\Support\Carbon;
 class KpiWidget extends Widget
 {
     protected static string $view = 'filament.widgets.superadmin.kpi-widget';
+    
+    /**
+     * Determina si el widget puede ser visto por el usuario actual.
+     * Solo visible para superadmins (role_id = 4)
+     */
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 1 || auth()->user()->role_id === 2;
+    }
 
     public function getViewData(): array
     {

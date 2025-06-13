@@ -9,6 +9,11 @@ class SalesChartWidget extends Widget
 {
     protected static string $view = 'filament.widgets.superadmin.sales-chart-widget';
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->role_id === 5;
+    }
+
     public $period = 'week';
 
     public function getViewData(): array

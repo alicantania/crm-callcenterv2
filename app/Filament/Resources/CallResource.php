@@ -102,10 +102,10 @@ class CallResource extends Resource
                     ->date('d/m/Y')
                     ->sortable(),
                     
-                TextColumn::make('call_time')
-                    ->label('Hora')
-                    ->time('H:i')
-                    ->sortable(),
+                // TextColumn::make('call_time')
+                //     ->label('Hora')
+                //     ->time('H:i')
+                //     ->sortable(),
                     
                 TextColumn::make('duration')
                     ->label('Duración (min)')
