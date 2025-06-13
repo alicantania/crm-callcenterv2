@@ -33,6 +33,7 @@ class LlamadaManualPage extends Page implements Forms\Contracts\HasForms
     protected static ?string $navigationGroup = 'Operador';
     protected static ?int    $navigationSort  = 10;
     protected static string  $view            = 'filament.pages.operator.llamada-manual';
+    protected static ?string $title           = 'Llamada Manual';
 
     // Persistencia multi-nivel: Livewire + sesión PHP
     #[\Livewire\Attributes\Persist('empresa_id')]
