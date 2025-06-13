@@ -4,9 +4,6 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use App\Filament\Widgets\Superadmin\KpiWidget;
-use App\Filament\Widgets\Superadmin\CallsChartWidget;
-use App\Filament\Widgets\Superadmin\SalesChartWidget;
-use App\Filament\Widgets\Superadmin\CommissionChartWidget;
 use App\Filament\Widgets\Superadmin\ActivityLogWidget;
 use App\Filament\Widgets\Superadmin\LoginHistoryWidget;
 use App\Filament\Widgets\Superadmin\SecurityStatsOverviewWidget;
@@ -39,9 +36,6 @@ class SuperadminDashboard extends Page
         return [
             KpiWidget::class,
             SecurityStatsOverviewWidget::class,
-            CallsChartWidget::class,
-            SalesChartWidget::class,
-            CommissionChartWidget::class,
             OperatorActivityWidget::class,
             LoginHistoryWidget::class,
             ActivityLogWidget::class,

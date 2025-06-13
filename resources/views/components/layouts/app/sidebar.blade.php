@@ -8,7 +8,7 @@
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
-                <x-app-logo />
+                <img src="/logo.png" alt="Logo del CRM" style="height: 40px; width: auto;" onerror="console.error('Error al cargar el logo:', this.src); this.style.display='none';">
             </a>
 
             <flux:navlist variant="outline">

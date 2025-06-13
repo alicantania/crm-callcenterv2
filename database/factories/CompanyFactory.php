@@ -20,8 +20,8 @@ class CompanyFactory extends Factory
             'address' => $this->faker->streetAddress,
             'city' => $this->faker->city,
             'province' => $this->faker->state,
-            'phone' => $this->faker->phoneNumber,
-            'email' => $this->faker->unique()->companyEmail,
+            'phone' => $this->faker->randomElement(['9', '6']) . $this->faker->numerify('########'), // 9 dígitos empezando por 9 o 6
+            'email' => $this->faker->unique()->safeEmail(), // Aseguramos que sea un email válido
             'activity' => $this->faker->catchPhrase,
             'cnae' => $this->faker->numerify('#####'),
             'assigned_operator_id' => 1, // más adelante lo haremos aleatorio entre IDs reales
