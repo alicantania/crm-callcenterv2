@@ -286,8 +286,8 @@ php artisan migrate
 
 ## 9. Contacto y Soporte
 Para soporte técnico contactar a:
-- Email: soporte@alicantania.com
-- Teléfono: +34 900 000 000
+- Email: alicantania@gmail.com
+- Teléfono: +34 678249468
 
 ---
 
